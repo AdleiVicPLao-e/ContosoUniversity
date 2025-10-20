@@ -139,12 +139,19 @@
 @functions {
     private string GetRoleLabel(ContosoUniversity.Models.Person.UserRole role)
     {
-        return role switch
+        switch (role)
         {
-            ContosoUniversity.Models.Person.UserRole.Administrator => "danger",
-            ContosoUniversity.Models.Person.UserRole.Instructor => "warning",
-            ContosoUniversity.Models.Person.UserRole.Student => "info",
-            _ => "default"
-        };
+            case ContosoUniversity.Models.Person.UserRole.Administrator:
+                return "danger";
+
+            case ContosoUniversity.Models.Person.UserRole.Instructor:
+                return "warning";
+
+            case ContosoUniversity.Models.Person.UserRole.Student:
+                return "info";
+
+            default:
+                return "default";
+        }
     }
 }
