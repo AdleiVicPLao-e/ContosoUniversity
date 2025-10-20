@@ -1,0 +1,67 @@
+@model ContosoUniversity.Models.Department
+
+@{
+    ViewBag.Title = "Department Details";
+}
+
+<h2>Department Details</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Department Information</h3>
+            </div>
+            <div class="panel-body">
+                <dl class="dl-horizontal">
+                    <dt>Name:</dt>
+                    <dd>@Model.Name</dd>
+
+                    <dt>Budget:</dt>
+                    <dd>@String.Format("{0:C}", Model.Budget)</dd>
+
+                    <dt>Start Date:</dt>
+                    <dd>@Model.StartDate.ToString("MMMM dd, yyyy")</dd>
+
+                    <dt>Administrator:</dt>
+                    <dd>
+                        @if (Model.Administrator != null)
+                        {
+                            @Model.Administrator.FullName
+                        }
+                        else
+                        {
+                            <span class="text-muted">Not assigned</span>
+                        }
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Department Statistics</h3>
+            </div>
+            <div class="panel-body">
+                <dl class="dl-horizontal">
+                    <dt>Total Courses:</dt>
+                    <dd>@Model.Courses.Count</dd>
+
+                    <dt>Total Students:</dt>
+                    <dd>@Model.Courses.Sum(c => c.Enrollments.Count)</dd>
+
+                    <dt>Total Instructors:</dt>
+                    <dd>@ViewBag.TotalInstructors</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="well">
+    @Html.ActionLink("Edit", "EditDepartment", "Administrator", new { id = Model.DepartmentID }, new { @class = "btn btn-primary" })
+    @Html.ActionLink("Back to Department List", "ManageDepartments", "Administrator", null, new { @class = "btn btn-default" })
+    @Html.ActionLink("Back to Dashboard", "Dashboard", "Administrator", null, new { @class = "btn btn-default" })
+</div>

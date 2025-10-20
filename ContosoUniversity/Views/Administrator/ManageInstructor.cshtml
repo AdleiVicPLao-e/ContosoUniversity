@@ -1,0 +1,165 @@
+@model ContosoUniversity.ViewModels.InstructorIndexData
+
+@{
+    ViewBag.Title = "Manage Instructors";
+}
+
+<h2>Instructors</h2>
+
+<p>
+    @Html.ActionLink("Create New Instructor", "CreateInstructor", "Administrator", null, new { @class = "btn btn-primary" })
+</p>
+
+@if (Model.Instructors != null && Model.Instructors.Any())
+{
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">All Instructors</h3>
+        </div>
+        <div class="panel-body">
+            <table class="table table-striped">
+                <tr>
+                    <th>Name</th>
+                    <th>Hire Date</th>
+                    <th>Office</th>
+                    <th>Courses</th>
+                    <th>Total Students</th>
+                    <th>Actions</th>
+                </tr>
+
+                @foreach (var instructor in Model.Instructors)
+                {
+                    string selectedRow = Model.SelectedInstructorID == instructor.ID ? "info" : "";
+                    <tr class="@selectedRow">
+                        <td>
+                            @instructor.FullName
+                        </td>
+                        <td>
+                            @instructor.HireDate.ToString("yyyy-MM-dd")
+                        </td>
+                        <td>
+                            @(instructor.OfficeAssignment?.Location ?? "No Office")
+                        </td>
+                        <td>
+                            @if (instructor.Courses != null)
+                            {
+                                foreach (var course in instructor.Courses.Take(3))
+                                {
+                                    <span class="label label-default">@course.Title</span><br />
+                                }
+                                if (instructor.Courses.Count > 3)
+                                {
+                                    <small>+@(instructor.Courses.Count - 3) more</small>
+                                }
+                            }
+                        </td>
+                        <td>
+                            @(instructor.Courses?.Sum(c => c.Enrollments.Count) ?? 0)
+                        </td>
+                        <td>
+                            @Html.ActionLink("Select", "ManageInstructors", new { instructorID = instructor.ID }, new { @class = "btn btn-xs btn-default" })
+                            @Html.ActionLink("Edit", "EditInstructor", new { id = instructor.ID }, new { @class = "btn btn-xs btn-primary" })
+                            @Html.ActionLink("Assign Courses", "AssignCoursesToInstructor", new { id = instructor.ID }, new { @class = "btn btn-xs btn-info" })
+                        </td>
+                    </tr>
+                }
+            </table>
+        </div>
+    </div>
+}
+
+@if (Model.Courses != null && Model.SelectedInstructorID.HasValue)
+{
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">
+                Courses Taught by Selected Instructor
+                @Html.ActionLink("Assign More Courses", "AssignCoursesToInstructor", new { id = Model.SelectedInstructorID }, new { @class = "btn btn-xs btn-primary pull-right" })
+            </h3>
+        </div>
+        <div class="panel-body">
+            <table class="table">
+                <tr>
+                    <th>Course ID</th>
+                    <th>Title</th>
+                    <th>Department</th>
+                    <th>Enrolled Students</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+
+                @foreach (var course in Model.Courses)
+                {
+                    string selectedRow = Model.SelectedCourseID == course.CourseID ? "info" : "";
+                    <tr class="@selectedRow">
+                        <td>@course.CourseID</td>
+                        <td>@course.Title</td>
+                        <td>@course.Department.Name</td>
+                        <td>@course.Enrollments.Count / @course.Capacity</td>
+                        <td>
+                            <span class="label label-@(course.IsActive ? "success" : "default")">
+                                @(course.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </td>
+                        <td>
+                            @Html.ActionLink("Select", "ManageInstructors", new { instructorID = Model.SelectedInstructorID, courseID = course.CourseID }, new { @class = "btn btn-xs btn-default" })
+                            @using (Html.BeginForm("RemoveCourseFromInstructor", "Administrator", new { instructorId = Model.SelectedInstructorID, courseId = course.CourseID }, FormMethod.Post, new { style = "display:inline" }))
+                            {
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-xs btn-danger" onclick="return confirm('Remove this course from instructor?')">Remove</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </table>
+        </div>
+    </div>
+}
+
+@if (Model.Enrollments != null && Model.SelectedCourseID.HasValue)
+{
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">
+                Students Enrolled in Selected Course
+            </h3>
+        </div>
+        <div class="panel-body">
+            <table class="table">
+                <tr>
+                    <th>Student Name</th>
+                    <th>Enrollment Date</th>
+                    <th>Grade</th>
+                    <th>Status</th>
+                </tr>
+                @foreach (var enrollment in Model.Enrollments)
+                {
+                    <tr>
+                        <td>@enrollment.Student.FullName</td>
+                        <td>@enrollment.Student.EnrollmentDate.ToString("yyyy-MM-dd")</td>
+                        <td>
+                            @if (enrollment.Grade.HasValue)
+                            {
+                                <span class="label label-success">@enrollment.Grade</span>
+                            }
+                            else
+                            {
+                                <span class="label label-warning">No Grade</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="label label-@(enrollment.Grade.HasValue ? "success" : "info")">
+                                @(enrollment.Grade.HasValue ? "Graded" : "Pending")
+                            </span>
+                        </td>
+                    </tr>
+                }
+            </table>
+        </div>
+    </div>
+}
+
+<div class="well">
+    @Html.ActionLink("Back to Dashboard", "Dashboard", "Administrator", null, new { @class = "btn btn-default" })
+    @Html.ActionLink("Manage Courses", "ManageCourses", "Administrator", null, new { @class = "btn btn-default" })
+</div>

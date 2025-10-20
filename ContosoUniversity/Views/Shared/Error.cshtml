@@ -1,13 +1,37 @@
-﻿<!DOCTYPE html>
-<html>
-<head>
-    <meta name="viewport" content="width=device-width" />
-    <title>Error</title>
-</head>
-<body>
-    <hgroup>
-        <h1>Error.</h1>
-        <h2>An error occurred while processing your request.</h2>
-    </hgroup>
-</body>
-</html>
+﻿@model System.Web.Mvc.HandleErrorInfo
+
+@{
+    ViewBag.Title = "Error";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 col-md-offset-3">
+            <div class="panel panel-danger">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Error</h3>
+                </div>
+                <div class="panel-body text-center">
+                    <span class="glyphicon glyphicon-exclamation-sign" style="font-size: 64px; color: #d9534f;"></span>
+                    <h2>An error occurred while processing your request.</h2>
+
+                    @if (Model != null)
+                    {
+                        <div class="alert alert-warning text-left">
+                            <strong>Controller:</strong> @Model.ControllerName<br />
+                            <strong>Action:</strong> @Model.ActionName<br />
+                            <strong>Exception:</strong> @Model.Exception.Message
+                        </div>
+                    }
+
+                    <p>Please try again or contact support if the problem persists.</p>
+                    <div class="btn-group">
+                        @Html.ActionLink("Go Back", null, null, null, new { href = "javascript:history.go(-1);", @class = "btn btn-default" })
+                        @Html.ActionLink("Go to Home", "Index", "Home", null, new { @class = "btn btn-primary" })
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

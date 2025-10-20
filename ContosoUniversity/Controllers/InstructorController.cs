@@ -1,263 +1,197 @@
-﻿using ContosoUniversity.DAL;
+﻿using System;
+using System.Collections.Generic;
+using System.Data.Entity;
+using System.Linq;
+using System.Web.Mvc;
 using ContosoUniversity.Models;
 using ContosoUniversity.ViewModels;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
-using System.Linq;
-using System.Net;
-using System.Web;
-using System.Web.Mvc;
 
 namespace ContosoUniversity.Controllers
 {
-    public class InstructorController : Controller
+    public class InstructorController : BaseController
     {
-        private SchoolContext db = new SchoolContext();
-
-        // GET: Instructor
-        public ActionResult Index(int? id, int? courseID)
+        // GET: Instructor/Dashboard
+        public ActionResult Dashboard()
         {
-            var viewModel = new InstructorIndexData();
+            RequireRole(Person.UserRole.Instructor);
 
-            viewModel.Instructors = db.Instructors
-                .Include(i => i.OfficeAssignment)
+            var instructor = db.Instructors
                 .Include(i => i.Courses.Select(c => c.Department))
-                .OrderBy(i => i.LastName);
+                .Include(i => i.Courses.Select(c => c.Enrollments))
+                .Include(i => i.OfficeAssignment)
+                .First(i => i.ID == CurrentUser.ID);
 
-            if (id != null)
+            var viewModel = new InstructorDashboardViewModel
             {
-                ViewBag.InstructorID = id.Value;
-                viewModel.Courses = viewModel.Instructors.Where(
-                    i => i.ID == id.Value).Single().Courses;
-            }
-
-            if (courseID != null)
-            {
-                ViewBag.CourseID = courseID.Value;
-                // Lazy loading
-                //viewModel.Enrollments = viewModel.Courses.Where(
-                //    x => x.CourseID == courseID).Single().Enrollments;
-                // Explicit loading
-                var selectedCourse = viewModel.Courses.Where(x => x.CourseID == courseID).Single();
-                db.Entry(selectedCourse).Collection(x => x.Enrollments).Load();
-                foreach (Enrollment enrollment in selectedCourse.Enrollments)
-                {
-                    db.Entry(enrollment).Reference(x => x.Student).Load();
-                }
-
-                viewModel.Enrollments = selectedCourse.Enrollments;
-            }
+                Instructor = instructor,
+                TotalStudents = instructor.Courses.Sum(c => c.Enrollments.Count),
+                ActiveCourses = instructor.Courses.Count(c => c.IsActive),
+                UpcomingDeadlines = GetUpcomingDeadlines(instructor),
+                RecentEnrollments = GetRecentEnrollments(instructor),
+                CoursesNeedingGrades = GetCoursesNeedingGrades(instructor)
+            };
 
             return View(viewModel);
         }
 
-        // GET: Instructor/Details/5
-        public ActionResult Details(int? id)
+        private List<string> GetUpcomingDeadlines(Instructor instructor)
         {
+            var deadlines = new List<string>();
+
+            // Example deadlines - you can customize this based on your business logic
+            var coursesWithUpcomingWork = instructor.Courses
+                .Where(c => c.IsActive && c.Enrollments.Count > 0)
+                .ToList();
+
+            foreach (var course in coursesWithUpcomingWork.Take(3))
+            {
+                deadlines.Add($"{course.Title}: Assignment due Friday");
+            }
+
+            return deadlines;
+        }
+
+        private List<Enrollment> GetRecentEnrollments(Instructor instructor)
+        {
+            return db.Enrollments
+                .Include(e => e.Student)
+                .Include(e => e.Course)
+                .Where(e => e.Course.Instructors.Any(i => i.ID == instructor.ID))
+                .OrderByDescending(e => e.EnrollmentID)
+                .Take(5)
+                .ToList();
+        }
+
+        private int GetCoursesNeedingGrades(Instructor instructor)
+        {
+            return instructor.Courses
+                .Count(c => c.IsActive &&
+                           c.Enrollments.Any(e => !e.Grade.HasValue));
+        }
+
+        // GET: Instructor/MyCourses
+        public ActionResult MyCourses(string status)
+        {
+            RequireRole(Person.UserRole.Instructor);
+
+            var instructor = db.Instructors
+                .Include(i => i.Courses.Select(c => c.Department))
+                .Include(i => i.Courses.Select(c => c.Enrollments))
+                .First(i => i.ID == CurrentUser.ID);
+
+            var courses = instructor.Courses.AsQueryable();
+
+            // Filter by status - using switch statement instead of switch expression
+            if (!string.IsNullOrEmpty(status))
+            {
+                switch (status)
+                {
+                    case "active":
+                        courses = courses.Where(c => c.IsActive);
+                        break;
+                    case "inactive":
+                        courses = courses.Where(c => !c.IsActive);
+                        break;
+                    case "full":
+                        courses = courses.Where(c => c.Enrollments.Count >= c.Capacity);
+                        break;
+                    default:
+                        // No filter applied
+                        break;
+                }
+            }
+
+            ViewBag.StatusFilter = new SelectList(new[]
+            {
+                new { Value = "", Text = "All Courses" },
+                new { Value = "active", Text = "Active" },
+                new { Value = "inactive", Text = "Inactive" },
+                new { Value = "full", Text = "Full" }
+            }, "Value", "Text", status);
+
+            return View(courses.OrderBy(c => c.CourseID).ToList());
+        }
+
+        // GET: Instructor/CourseDetails/5
+        public ActionResult CourseDetails(int? id)
+        {
+            RequireRole(Person.UserRole.Instructor);
+
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return new HttpStatusCodeResult(System.Net.HttpStatusCode.BadRequest);
             }
-            Instructor instructor = db.Instructors.Find(id);
-            if (instructor == null)
+
+            // Verify the instructor teaches this course
+            var course = db.Courses
+                .Include(c => c.Department)
+                .Include(c => c.Enrollments.Select(e => e.Student))
+                .FirstOrDefault(c => c.CourseID == id && c.Instructors.Any(i => i.ID == CurrentUser.ID));
+
+            if (course == null)
             {
                 return HttpNotFound();
             }
-            return View(instructor);
+
+            return View(course);
         }
 
-        // GET: Instructor/Create
-        public ActionResult Create()
+        // GET: Instructor/CourseStudents/5
+        public ActionResult CourseStudents(int? id)
         {
-            var instructor = new Instructor();
-            instructor.Courses = new List<Course>();
-            PopulateAssignedCourseData(instructor);
-            return View();
+            RequireRole(Person.UserRole.Instructor);
+
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(System.Net.HttpStatusCode.BadRequest);
+            }
+
+            // Verify the instructor teaches this course
+            var course = db.Courses
+                .Include(c => c.Enrollments.Select(e => e.Student))
+                .FirstOrDefault(c => c.CourseID == id && c.Instructors.Any(i => i.ID == CurrentUser.ID));
+
+            if (course == null)
+            {
+                return HttpNotFound();
+            }
+
+            return View(course);
         }
 
-        // POST: Instructor/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
-        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "LastName,FirstMidName,HireDate,OfficeAssignment")] Instructor instructor, string[] selectedCourses)
+        public ActionResult UpdateGrade(int enrollmentId, Grade grade)
         {
-            if (selectedCourses != null)
-            {
-                foreach (var course in selectedCourses)
-                {
-                    var courseToAdd = db.Courses.Find(int.Parse(course));
-                    instructor.Courses.Add(courseToAdd);
-                }
-            }
-            if (ModelState.IsValid)
-            {
-                db.Instructors.Add(instructor);
-                db.SaveChanges();
-                return RedirectToAction("Index");
-            }
-            PopulateAssignedCourseData(instructor);
-            return View(instructor);
-        }
+            RequireRole(Person.UserRole.Instructor);
 
-        // GET: Instructor/Edit/5
-        public ActionResult Edit(int? id)
-        {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            Instructor instructor = db.Instructors
-                .Include(i => i.OfficeAssignment)
-                .Include(i => i.Courses)
-                .Where(i => i.ID == id)
-                .Single();
-            if (instructor == null)
-            {
-                return HttpNotFound();
-            }
-            ViewBag.ID = new SelectList(db.OfficeAssignments, "InstructorID", "Location", instructor.ID);
-            return View(instructor);
-        }
+            var enrollment = db.Enrollments.Find(enrollmentId);
+            var course = db.Courses
+                .Include(c => c.Instructors)
+                .First(c => c.Enrollments.Any(e => e.EnrollmentID == enrollmentId));
 
-        private void PopulateAssignedCourseData(Instructor instructor)
-        {
-            var allCourses = db.Courses;
-            var instructorCourses = new HashSet<int>(instructor.Courses.Select(c => c.CourseID));
-            var viewModel = new List<AssignedCourseData>();
-            foreach (var course in allCourses)
+            // Verify the instructor teaches this course
+            if (!course.Instructors.Any(i => i.ID == CurrentUser.ID))
             {
-                viewModel.Add(new AssignedCourseData
-                {
-                    CourseID = course.CourseID,
-                    Title = course.Title,
-                    Assigned = instructorCourses.Contains(course.CourseID)
-                });
-            }
-            ViewBag.Courses = viewModel;
-        }
-
-        // POST: Instructor/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
-        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost, ActionName("Edit")]
-        [ValidateAntiForgeryToken]
-        public ActionResult Edit(int? id, string[] selectedCourses)
-        {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            var instructorToUpdate = db.Instructors
-               .Include(i => i.OfficeAssignment)
-               .Include(i => i.Courses)
-               .Where(i => i.ID == id)
-               .Single();
-
-            if (TryUpdateModel(instructorToUpdate, "",
-               new string[] { "LastName", "FirstMidName", "HireDate", "OfficeAssignment" }))
-            {
-                try
-                {
-                    if (String.IsNullOrWhiteSpace(instructorToUpdate.OfficeAssignment.Location))
-                    {
-                        instructorToUpdate.OfficeAssignment = null;
-                    }
-
-                    UpdateInstructorCourses(selectedCourses, instructorToUpdate);
-
-                    db.SaveChanges();
-
-                    return RedirectToAction("Index");
-                }
-                catch (RetryLimitExceededException /* dex */)
-                {
-                    //Log the error (uncomment dex variable name and add a line here to write a log.
-                    ModelState.AddModelError("", "Unable to save changes. Try again, and if the problem persists, see your system administrator.");
-                }
-            }
-            PopulateAssignedCourseData(instructorToUpdate);
-            return View(instructorToUpdate);
-        }
-        private void UpdateInstructorCourses(string[] selectedCourses, Instructor instructorToUpdate)
-        {
-            if (selectedCourses == null)
-            {
-                instructorToUpdate.Courses = new List<Course>();
-                return;
+                return new HttpStatusCodeResult(403, "Not authorized to grade this course");
             }
 
-            var selectedCoursesHS = new HashSet<string>(selectedCourses);
-            var instructorCourses = new HashSet<int>
-                (instructorToUpdate.Courses.Select(c => c.CourseID));
-            foreach (var course in db.Courses)
-            {
-                if (selectedCoursesHS.Contains(course.CourseID.ToString()))
-                {
-                    if (!instructorCourses.Contains(course.CourseID))
-                    {
-                        instructorToUpdate.Courses.Add(course);
-                    }
-                }
-                else
-                {
-                    if (instructorCourses.Contains(course.CourseID))
-                    {
-                        instructorToUpdate.Courses.Remove(course);
-                    }
-                }
-            }
-        }
-
-        // GET: Instructor/Delete/5
-        public ActionResult Delete(int? id)
-        {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            Instructor instructor = db.Instructors.Find(id);
-            if (instructor == null)
-            {
-                return HttpNotFound();
-            }
-            return View(instructor);
-        }
-
-        // POST: Instructor/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public ActionResult DeleteConfirmed(int id)
-        {
-            Instructor instructor = db.Instructors
-              .Include(i => i.OfficeAssignment)
-              .Where(i => i.ID == id)
-              .Single();
-
-            db.Instructors.Remove(instructor);
-
-            var department = db.Departments
-                .Where(d => d.InstructorID == id)
-                .SingleOrDefault();
-            if (department != null)
-            {
-                department.InstructorID = null;
-            }
-
+            enrollment.Grade = grade;
             db.SaveChanges();
-            return RedirectToAction("Index");
+
+            TempData["Success"] = "Grade updated successfully";
+            return RedirectToAction("CourseStudents", new { id = course.CourseID });
         }
 
-        protected override void Dispose(bool disposing)
+        // GET: Instructor/MySchedule
+        public ActionResult MySchedule()
         {
-            if (disposing)
-            {
-                db.Dispose();
-            }
-            base.Dispose(disposing);
+            RequireRole(Person.UserRole.Instructor);
+
+            var instructor = db.Instructors
+                .Include(i => i.Courses.Select(c => c.Department))
+                .First(i => i.ID == CurrentUser.ID);
+
+            return View(instructor.Courses.Where(c => c.IsActive).ToList());
         }
     }
 }

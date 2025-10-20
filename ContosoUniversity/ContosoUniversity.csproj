@@ -133,8 +133,9 @@
     <Compile Include="App_Start\BundleConfig.cs" />
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
-    <Compile Include="Controllers\CourseController.cs" />
-    <Compile Include="Controllers\DepartmentController.cs" />
+    <Compile Include="Controllers\AccountController.cs" />
+    <Compile Include="Controllers\AdministratorController.cs" />
+    <Compile Include="Controllers\BaseController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\InstructorController.cs" />
     <Compile Include="Controllers\StudentController.cs" />
@@ -150,35 +151,8 @@
     <Compile Include="Helpers\KeyGenerator.cs" />
     <Compile Include="Logging\ILogger.cs" />
     <Compile Include="Logging\Logger.cs" />
-    <Compile Include="Migrations\202510150333386_InitialCreate.cs" />
-    <Compile Include="Migrations\202510150333386_InitialCreate.Designer.cs">
-      <DependentUpon>202510150333386_InitialCreate.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202510200107084_MaxLengthOnNames.cs" />
-    <Compile Include="Migrations\202510200107084_MaxLengthOnNames.Designer.cs">
-      <DependentUpon>202510200107084_MaxLengthOnNames.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202510200108462_ColumnFirstName.cs" />
-    <Compile Include="Migrations\202510200108462_ColumnFirstName.Designer.cs">
-      <DependentUpon>202510200108462_ColumnFirstName.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202510200119554_ComplexDataModel.cs" />
-    <Compile Include="Migrations\202510200119554_ComplexDataModel.Designer.cs">
-      <DependentUpon>202510200119554_ComplexDataModel.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202510200322219_DepartmentSP.cs" />
-    <Compile Include="Migrations\202510200322219_DepartmentSP.Designer.cs">
-      <DependentUpon>202510200322219_DepartmentSP.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202510200348229_RowVersion.cs" />
-    <Compile Include="Migrations\202510200348229_RowVersion.Designer.cs">
-      <DependentUpon>202510200348229_RowVersion.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202510200357542_Inheritance.cs" />
-    <Compile Include="Migrations\202510200357542_Inheritance.Designer.cs">
-      <DependentUpon>202510200357542_Inheritance.cs</DependentUpon>
-    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
+    <Compile Include="Models\Administrator.cs" />
     <Compile Include="Models\Course.cs" />
     <Compile Include="Models\Department.cs" />
     <Compile Include="Models\Enrollment.cs" />
@@ -187,9 +161,30 @@
     <Compile Include="Models\Person.cs" />
     <Compile Include="Models\Student.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ViewModels\AssignedCourseData.cs" />
-    <Compile Include="ViewModels\EnrollmentDateGroup.cs" />
+    <Compile Include="ViewModels\AdminDashboardViewModel.cs" />
+    <Compile Include="ViewModels\AssignCoursesViewModal.cs" />
+    <Compile Include="ViewModels\InstructorDashboardViewModel.cs" />
     <Compile Include="ViewModels\InstructorIndexData.cs" />
+    <Compile Include="ViewModels\InstructorManagementViewModel.cs" />
+    <Content Include="Views\Administrator\CreateDepartment.cshtml" />
+    <Content Include="Views\Account\Login.cshtml" />
+    <None Include="Views\Administrator\DeleteCourse.cshtml" />
+    <Content Include="Views\Administrator\ManageCourses.cshtml" />
+    <Content Include="Views\Administrator\EditCourses.cshtml" />
+    <Content Include="Views\Administrator\CourseDetails.cshtml" />
+    <Content Include="Views\Administrator\ManageDepartments.cshtml" />
+    <Content Include="Views\Administrator\EditDepartment.cshtml" />
+    <Content Include="Views\Administrator\DepartmentDetails.cshtml" />
+    <Content Include="Views\Administrator\DeleteDepartment.cshtml" />
+    <None Include="Views\Instructor\MySchedule.cshtml" />
+    <Content Include="Views\Student\AvailableCourses.cshtml" />
+    <Content Include="Views\Instructor\MyCourses.cshtml" />
+    <Content Include="Views\Instructor\CourseStudents.cshtml" />
+    <Content Include="Views\Instructor\CourseDetails.cshtml" />
+    <Content Include="Views\Shared\AccessDenied.cshtml" />
+    <None Include="Views\Student\Dashboard.cshtml" />
+    <Content Include="Views\Student\MyGrade.cshtml" />
+    <Content Include="Views\Student\MySchedule.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap-grid.css" />
@@ -244,27 +239,10 @@
     <Content Include="Views\Home\About.cshtml" />
     <Content Include="Views\Home\Contact.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
-    <Content Include="Views\Course\Create.cshtml" />
-    <Content Include="Views\Course\Delete.cshtml" />
-    <Content Include="Views\Course\Details.cshtml" />
-    <Content Include="Views\Course\Edit.cshtml" />
-    <Content Include="Views\Course\Index.cshtml" />
-    <Content Include="Views\Instructor\Create.cshtml" />
-    <Content Include="Views\Instructor\Delete.cshtml" />
-    <Content Include="Views\Instructor\Details.cshtml" />
-    <Content Include="Views\Instructor\Edit.cshtml" />
-    <Content Include="Views\Instructor\Index.cshtml" />
-    <Content Include="Views\Department\Create.cshtml" />
-    <Content Include="Views\Department\Delete.cshtml" />
-    <Content Include="Views\Department\Details.cshtml" />
-    <Content Include="Views\Department\Edit.cshtml" />
-    <Content Include="Views\Department\Index.cshtml" />
-    <Content Include="Views\Student\Create.cshtml" />
-    <Content Include="Views\Student\Delete.cshtml" />
-    <Content Include="Views\Student\Details.cshtml" />
-    <Content Include="Views\Student\Edit.cshtml" />
-    <Content Include="Views\Student\Index.cshtml" />
-    <Content Include="Views\Course\UpdateCourseCredits.cshtml" />
+    <Content Include="Views\Instructor\Dashboard.cshtml" />
+    <Content Include="Views\Administrator\ManageInstructor.cshtml" />
+    <Content Include="Views\Administrator\ManageStudent.cshtml" />
+    <Content Include="Views\Administrator\StudentDetails.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
@@ -295,29 +273,6 @@
     <Content Include="Scripts\bootstrap.bundle.js.map" />
     <Content Include="Scripts\jquery-3.7.0.slim.min.map" />
     <Content Include="Scripts\jquery-3.7.0.min.map" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Migrations\202510150333386_InitialCreate.resx">
-      <DependentUpon>202510150333386_InitialCreate.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202510200107084_MaxLengthOnNames.resx">
-      <DependentUpon>202510200107084_MaxLengthOnNames.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202510200108462_ColumnFirstName.resx">
-      <DependentUpon>202510200108462_ColumnFirstName.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202510200119554_ComplexDataModel.resx">
-      <DependentUpon>202510200119554_ComplexDataModel.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202510200322219_DepartmentSP.resx">
-      <DependentUpon>202510200322219_DepartmentSP.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202510200348229_RowVersion.resx">
-      <DependentUpon>202510200348229_RowVersion.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202510200357542_Inheritance.resx">
-      <DependentUpon>202510200357542_Inheritance.cs</DependentUpon>
-    </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

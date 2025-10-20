@@ -1,0 +1,111 @@
+@model ContosoUniversity.Models.Course
+
+@{
+    ViewBag.Title = "Course Details";
+}
+
+<h2>Course Details</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Course Information</h3>
+            </div>
+            <div class="panel-body">
+                <dl class="dl-horizontal">
+                    <dt>Course ID:</dt>
+                    <dd>@Model.CourseID</dd>
+
+                    <dt>Title:</dt>
+                    <dd>@Model.Title</dd>
+
+                    <dt>Description:</dt>
+                    <dd>@(string.IsNullOrEmpty(Model.Description) ? "No description" : Model.Description)</dd>
+
+                    <dt>Credits:</dt>
+                    <dd>@Model.Credits</dd>
+
+                    <dt>Capacity:</dt>
+                    <dd>@Model.Capacity students</dd>
+
+                    <dt>Enrolled:</dt>
+                    <dd>@Model.EnrolledStudents students</dd>
+
+                    <dt>Available Spots:</dt>
+                    <dd>@Model.AvailableSpots</dd>
+
+                    <dt>Fill Rate:</dt>
+                    <dd>@Model.FillRate.ToString("P0")</dd>
+
+                    <dt>Department:</dt>
+                    <dd>@Model.Department.Name</dd>
+
+                    <dt>Status:</dt>
+                    <dd>
+                        <span class="label label-@(Model.IsActive ? "success" : "default")">
+                            @(Model.IsActive ? "Active" : "Inactive")
+                        </span>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Teaching Team</h3>
+            </div>
+            <div class="panel-body">
+                @if (Model.Instructors.Any())
+                {
+                    <ul class="list-group">
+                        @foreach (var instructor in Model.Instructors)
+                        {
+                            <li class="list-group-item">
+                                <strong>@instructor.FullName</strong>
+                                @if (!string.IsNullOrEmpty(instructor.Specialization))
+                                {
+                                    <br /><small class="text-muted">@instructor.Specialization</small>
+                                }
+                                @if (instructor.OfficeAssignment != null)
+                                {
+                                    <br /><small class="text-muted">Office: @instructor.OfficeAssignment.Location</small>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p class="text-muted">No instructors assigned to this course.</p>
+                }
+            </div>
+        </div>
+
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Enrollment Statistics</h3>
+            </div>
+            <div class="panel-body">
+                <dl class="dl-horizontal">
+                    <dt>Total Enrollments:</dt>
+                    <dd>@Model.Enrollments.Count</dd>
+
+                    <dt>Graded Students:</dt>
+                    <dd>@Model.Enrollments.Count(e => e.Grade.HasValue)</dd>
+
+                    <dt>Ungraded Students:</dt>
+                    <dd>@Model.Enrollments.Count(e => !e.Grade.HasValue)</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="well">
+    @Html.ActionLink("Edit", "EditCourse", "Administrator", new { id = Model.CourseID }, new { @class = "btn btn-primary" })
+    @Html.ActionLink("Back to Course List", "ManageCourses", "Administrator", null, new { @class = "btn btn-default" })
+    @Html.ActionLink("Back to Dashboard", "Dashboard", "Administrator", null, new { @class = "btn btn-default" })
+</div>

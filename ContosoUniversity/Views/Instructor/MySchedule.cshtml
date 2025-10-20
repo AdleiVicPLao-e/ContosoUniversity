@@ -1,0 +1,78 @@
+﻿using ContosoUniversity.Models;
+using System;
+using System.Security.Claims;
+using System.Web.Mvc;
+using System.Web.Razor.Parser.SyntaxTree;
+using System.Web.UI.WebControls;
+
+@model IEnumerable<ContosoUniversity.Models.Course>
+
+@{
+    ViewBag.Title = "My Teaching Schedule";
+}
+
+< h2 > My Teaching Schedule</h2>
+
+<div class= "panel panel-default" >
+    < div class= "panel-heading" >
+        < h3 class= "panel-title" > Current Semester Schedule</h3>
+    </div>
+    <div class= "panel-body" >
+        @if(Model.Any())
+        {
+            < table class= "table table-striped" >
+                < tr >
+                    < th > Course </ th >
+                    < th > Course ID </ th >
+                    < th > Department </ th >
+                    < th > Credits </ th >
+                    < th > Enrolled Students </ th >
+                    < th > Capacity </ th >
+                    < th > Status </ th >
+                    < th > Actions </ th >
+                </ tr >
+                @foreach(var course in Model)
+                {
+                    < tr >
+                        < td > @course.Title </ td >
+                        < td > @course.CourseID </ td >
+                        < td > @course.Department.Name </ td >
+                        < td > @course.Credits </ td >
+                        < td > @course.EnrolledStudents </ td >
+                        < td > @course.Capacity </ td >
+                        < td >
+                            < span class= "label label-@(course.Status == "Active" ? "success" : course.Status == "Full" ? "warning" : "default")">
+                                @course.Status
+                            </span>
+                        </td>
+                        <td>
+                            @Html.ActionLink("Students", "CourseStudents", new { id = course.CourseID }, new { @class = "btn btn-xs btn-primary" })
+                            @Html.ActionLink("Details", "CourseDetails", new { id = course.CourseID }, new { @class = "btn btn-xs btn-default" })
+                        </ td >
+                    </ tr >
+                }
+            </ table >
+
+
+            < div class= "well" >
+                < h4 > Schedule Summary </ h4 >
+                < p >< strong > Total Courses:</ strong > @Model.Count() </ p >
+                < p >< strong > Total Students:</ strong > @Model.Sum(c => c.EnrolledStudents) </ p >
+                < p >< strong > Total Credits:</ strong > @Model.Sum(c => c.Credits) </ p >
+                < p >< strong > Average Class Size:</ strong > @Model.Average(c => c.EnrolledStudents).ToString("F1") </ p >
+            </ div >
+        }
+        else
+{
+            < div class= "alert alert-info" >
+                < h4 > No Active Courses</h4>
+                <p>You are not currently assigned to any active courses for this semester.</p>
+            </div>
+        }
+    </ div >
+</ div >
+
+< div class= "well" >
+    @Html.ActionLink("Back to Dashboard", "Dashboard", null, new { @class = "btn btn-default" })
+    @Html.ActionLink("View All My Courses", "MyCourses", null, new { @class = "btn btn-primary" })
+</ div >

@@ -1,0 +1,74 @@
+@model ContosoUniversity.Models.Student
+
+@{
+    ViewBag.Title = "Student Details";
+}
+
+<h2>Student Details</h2>
+
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">Basic Information</h3>
+    </div>
+    <div class="panel-body">
+        <dl class="dl-horizontal">
+            <dt>@Html.DisplayNameFor(model => model.FullName)</dt>
+            <dd>@Html.DisplayFor(model => model.FullName)</dd>
+
+            <dt>@Html.DisplayNameFor(model => model.UserName)</dt>
+            <dd>@Html.DisplayFor(model => model.UserName)</dd>
+
+            <dt>@Html.DisplayNameFor(model => model.EnrollmentDate)</dt>
+            <dd>@Html.DisplayFor(model => model.EnrollmentDate)</dd>
+
+            <dt>@Html.DisplayNameFor(model => model.StudentCode)</dt>
+            <dd>@Html.DisplayFor(model => model.StudentCode)</dd>
+        </dl>
+    </div>
+</div>
+
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">Course Enrollments</h3>
+    </div>
+    <div class="panel-body">
+        @if (Model.Enrollments.Any())
+        {
+            <table class="table">
+                <tr>
+                    <th>Course</th>
+                    <th>Credits</th>
+                    <th>Department</th>
+                    <th>Grade</th>
+                </tr>
+                @foreach (var enrollment in Model.Enrollments)
+                {
+                    <tr>
+                        <td>@enrollment.Course.Title</td>
+                        <td>@enrollment.Course.Credits</td>
+                        <td>@enrollment.Course.Department.Name</td>
+                        <td>
+                            @if (enrollment.Grade.HasValue)
+                            {
+                                <span class="label label-success">@enrollment.Grade</span>
+                            }
+                            else
+                            {
+                                <span class="label label-warning">No Grade</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </table>
+        }
+        else
+        {
+            <p>This student is not enrolled in any courses.</p>
+        }
+    </div>
+</div>
+
+<div class="well">
+    @Html.ActionLink("Edit", "EditStudent", "Administrator", new { id = Model.ID }, new { @class = "btn btn-primary" })
+    @Html.ActionLink("Back to List", "ManageStudents", "Administrator", null, new { @class = "btn btn-default" })
+</div>

@@ -8,26 +8,121 @@
     @Scripts.Render("~/bundles/modernizr")
 </head>
 <body>
-    <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-dark">
+    <nav class="navbar navbar-inverse navbar-fixed-top">
         <div class="container">
-            @Html.ActionLink("Contoso University", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
-            <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" title="Toggle navigation" aria-controls="navbarSupportedContent"
-                    aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse d-sm-inline-flex justify-content-between">
-                <ul class="navbar-nav flex-grow-1">
-                    <li>@Html.ActionLink("Home", "Index", "Home", new { area = "" }, new { @class = "nav-link" })</li>
-                    <li>@Html.ActionLink("About", "About", "Home", new { area = "" }, new { @class = "nav-link" })</li>
-                    <li>@Html.ActionLink("Students", "Index", "Student", new { area = "" }, new { @class = "nav-link" })</li>
-                    <li>@Html.ActionLink("Courses", "Index", "Course", new { area = "" }, new { @class = "nav-link" })</li>
-                    <li>@Html.ActionLink("Instructors", "Index", "Instructor", new { area = "" }, new { @class = "nav-link" })</li>
-                    <li>@Html.ActionLink("Departments", "Index", "Department", new { area = "" }, new { @class = "nav-link" })</li>
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                @Html.ActionLink("Contoso University", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li>@Html.ActionLink("Home", "Index", "Home")</li>
+                    <li>@Html.ActionLink("About", "About", "Home")</li>
+                    <li>@Html.ActionLink("Contact", "Contact", "Home")</li>
+
+                    @if (ViewBag.CurrentUser != null)
+                    {
+                        // Administrator Navigation
+                        if (ViewBag.CurrentUser.IsAdministrator)
+                        {
+                            <li class="dropdown">
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                                    Admin <span class="caret"></span>
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li>@Html.ActionLink("Dashboard", "Dashboard", "Administrator")</li>
+                                    <li role="separator" class="divider"></li>
+                                    <li>@Html.ActionLink("Manage Courses", "ManageCourses", "Administrator")</li>
+                                    <li>@Html.ActionLink("Manage Departments", "ManageDepartments", "Administrator")</li>
+                                    <li>@Html.ActionLink("Manage Instructors", "ManageInstructors", "Administrator")</li>
+                                    <li>@Html.ActionLink("Manage Students", "ManageStudents", "Administrator")</li>
+                                    <li>@Html.ActionLink("Manage Users", "ManageUsers", "Administrator")</li>
+                                </ul>
+                            </li>
+                        }
+
+                        // Instructor Navigation
+                        if (ViewBag.CurrentUser.IsInstructor)
+                        {
+                            <li class="dropdown">
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                                    Instructor <span class="caret"></span>
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li>@Html.ActionLink("Dashboard", "Dashboard", "Instructor")</li>
+                                    <li role="separator" class="divider"></li>
+                                    <li>@Html.ActionLink("My Courses", "MyCourses", "Instructor")</li>
+                                    <li>@Html.ActionLink("My Schedule", "MySchedule", "Instructor")</li>
+                                </ul>
+                            </li>
+                        }
+
+                        // Student Navigation
+                        if (ViewBag.CurrentUser.IsStudent)
+                        {
+                            <li class="dropdown">
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                                    Student <span class="caret"></span>
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li>@Html.ActionLink("Dashboard", "Dashboard", "Student")</li>
+                                    <li role="separator" class="divider"></li>
+                                    <li>@Html.ActionLink("My Grades", "MyGrades", "Student")</li>
+                                    <li>@Html.ActionLink("Available Courses", "AvailableCourses", "Student")</li>
+                                    <li>@Html.ActionLink("My Schedule", "MySchedule", "Student")</li>
+                                </ul>
+                            </li>
+                        }
+                    }
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    @if (ViewBag.CurrentUser != null)
+                    {
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                                <span class="glyphicon glyphicon-user"></span>
+                                @ViewBag.CurrentUser.FullName
+                                <span class="label label-@GetRoleLabel(ViewBag.UserRole)">@ViewBag.UserRole</span>
+                                <span class="caret"></span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a href="#"><span class="glyphicon glyphicon-user"></span> Profile</a></li>
+                                <li><a href="#"><span class="glyphicon glyphicon-cog"></span> Settings</a></li>
+                                <li role="separator" class="divider"></li>
+                                <li>@Html.ActionLink("Logout", "Logout", "Account")</li>
+                            </ul>
+                        </li>
+                    }
+                    else
+                    {
+                        <li>@Html.ActionLink("Login", "Login", "Account")</li>
+                    }
                 </ul>
             </div>
         </div>
     </nav>
+
     <div class="container body-content">
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible" style="margin-top: 20px;">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                @TempData["Success"]
+            </div>
+        }
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible" style="margin-top: 20px;">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                @TempData["Error"]
+            </div>
+        }
+
         @RenderBody()
         <hr />
         <footer>
@@ -40,3 +135,16 @@
     @RenderSection("scripts", required: false)
 </body>
 </html>
+
+@functions {
+    private string GetRoleLabel(ContosoUniversity.Models.Person.UserRole role)
+    {
+        return role switch
+        {
+            ContosoUniversity.Models.Person.UserRole.Administrator => "danger",
+            ContosoUniversity.Models.Person.UserRole.Instructor => "warning",
+            ContosoUniversity.Models.Person.UserRole.Student => "info",
+            _ => "default"
+        };
+    }
+}

@@ -12,6 +12,17 @@ namespace ContosoUniversity.Models
         [Display(Name = "Enrollment Date")]
         public DateTime EnrollmentDate { get; set; }
 
+        // Student-specific properties
+        [StringLength(20)]
+        [Display(Name = "Student ID")]
+        public string StudentCode { get; set; }
+
         public virtual ICollection<Enrollment> Enrollments { get; set; }
+
+        // Constructor to automatically add Student role
+        public Student()
+        {
+            AddRole(UserRole.Student);
+        }
     }
 }

@@ -1,0 +1,59 @@
+@model ContosoUniversity.Models.Department
+
+@{
+    ViewBag.Title = "Delete Department";
+}
+
+<h2>Delete Department</h2>
+
+<p class="error">@ViewBag.ConcurrencyErrorMessage</p>
+<h3>Are you sure you want to delete this department?</h3>
+<div>
+    <h4>Department Information</h4>
+    <hr />
+    <dl class="dl-horizontal">
+        <dt>Name:</dt>
+        <dd>@Model.Name</dd>
+
+        <dt>Budget:</dt>
+        <dd>@String.Format("{0:C}", Model.Budget)</dd>
+
+        <dt>Start Date:</dt>
+        <dd>@Model.StartDate.ToString("MMMM dd, yyyy")</dd>
+
+        <dt>Administrator:</dt>
+        <dd>
+            @if (Model.Administrator != null)
+            {
+                @Model.Administrator.FullName
+            }
+            else
+            {
+                <span class="text-muted">Not assigned</span>
+            }
+        </dd>
+
+        <dt>Total Courses:</dt>
+        <dd>@Model.Courses.Count</dd>
+    </dl>
+
+    @if (Model.Courses.Count > 0)
+    {
+        <div class="alert alert-warning">
+            <strong>Warning:</strong> This department has @Model.Courses.Count courses.
+            Deleting this department will also remove all associated courses and their enrollments.
+        </div>
+    }
+
+    @using (Html.BeginForm("DeleteDepartment", "Administrator", FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(model => model.DepartmentID)
+        @Html.HiddenFor(model => model.RowVersion)
+
+        <div class="form-actions no-color">
+            <input type="submit" value="Delete" class="btn btn-danger" />
+            @Html.ActionLink("Cancel", "ManageDepartments", "Administrator", null, new { @class = "btn btn-default" })
+        </div>
+    }
+</div>

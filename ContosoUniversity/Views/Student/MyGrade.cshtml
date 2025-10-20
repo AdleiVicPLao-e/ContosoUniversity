@@ -1,0 +1,108 @@
+@model IEnumerable<ContosoUniversity.Models.Enrollment>
+
+@{
+    ViewBag.Title = "My Grades";
+}
+
+<h2>My Grades</h2>
+
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">Course Grades</h3>
+    </div>
+    <div class="panel-body">
+        @if (Model.Any())
+        {
+            <table class="table table-striped">
+                <tr>
+                    <th>Course Code</th>
+                    <th>Course Title</th>
+                    <th>Credits</th>
+                    <th>Department</th>
+                    <th>Grade</th>
+                    <th>Status</th>
+                </tr>
+                @foreach (var enrollment in Model)
+                {
+                    <tr>
+                        <td>@enrollment.Course.CourseID</td>
+                        <td>@enrollment.Course.Title</td>
+                        <td>@enrollment.Course.Credits</td>
+                        <td>@enrollment.Course.Department.Name</td>
+                        <td>
+                            @if (enrollment.Grade.HasValue)
+                            {
+                                <span class="label label-success" style="font-size: 14px; padding: 5px 10px;">
+                                    @enrollment.Grade
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="label label-warning">Not Graded</span>
+                            }
+                        </td>
+                        <td>
+                            @if (enrollment.Grade.HasValue)
+                            {
+                                <span class="text-success"><strong>Completed</strong></span>
+                            }
+                            else
+                            {
+                                <span class="text-info">In Progress</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </table>
+
+            <div class="well">
+                <h4>GPA Summary</h4>
+                @{
+                    var gradedCourses = Model.Where(e => e.Grade.HasValue).ToList();
+                    if (gradedCourses.Any())
+                    {
+                        var totalCredits = gradedCourses.Sum(e => e.Course.Credits);
+                        var totalGradePoints = gradedCourses.Sum(e => GetGradePoints(e.Grade.Value) * e.Course.Credits);
+                        var gpa = totalCredits > 0 ? totalGradePoints / totalCredits : 0;
+
+                        <p><strong>Current GPA:</strong> <span class="label label-primary">@gpa.ToString("F2")</span></p>
+                        <p><strong>Graded Courses:</strong> @gradedCourses.Count</p>
+                        <p><strong>Total Credits:</strong> @totalCredits</p>
+                    }
+                    else
+                    {
+                        <p>No graded courses yet. Your GPA will appear here once you receive grades.</p>
+                    }
+                }
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                <h4>No Enrollments Found</h4>
+                <p>You are not enrolled in any courses yet.</p>
+                @Html.ActionLink("Browse Available Courses", "AvailableCourses", null, new { @class = "btn btn-primary" })
+            </div>
+        }
+    </div>
+</div>
+
+<div class="well">
+    @Html.ActionLink("Back to Dashboard", "Dashboard", null, new { @class = "btn btn-default" })
+    @Html.ActionLink("Browse Courses", "AvailableCourses", null, new { @class = "btn btn-primary" })
+</div>
+
+@functions {
+    private decimal GetGradePoints(ContosoUniversity.Models.Grade grade)
+    {
+        return grade switch
+        {
+            ContosoUniversity.Models.Grade.A => 4.0m,
+            ContosoUniversity.Models.Grade.B => 3.0m,
+            ContosoUniversity.Models.Grade.C => 2.0m,
+            ContosoUniversity.Models.Grade.D => 1.0m,
+            ContosoUniversity.Models.Grade.F => 0.0m,
+            _ => 0.0m
+        };
+    }
+}

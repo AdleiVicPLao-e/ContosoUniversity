@@ -1,0 +1,65 @@
+@model PagedList.IPagedList<ContosoUniversity.Models.Student>
+@using PagedList.Mvc;
+
+@{
+    ViewBag.Title = "Manage Students";
+}
+
+<h2>Manage Students</h2>
+
+@using (Html.BeginForm("ManageStudents", "Administrator", FormMethod.Get))
+{
+    <div class="form-inline mb-3">
+        <div class="form-group">
+            @Html.TextBox("searchString", ViewBag.CurrentFilter as string, new { @class = "form-control", placeholder = "Search by name..." })
+        </div>
+        <input type="submit" value="Search" class="btn btn-default" />
+        @Html.ActionLink("Create New Student", "CreateStudent", "Administrator", null, new { @class = "btn btn-primary" })
+    </div>
+}
+
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">Students</h3>
+    </div>
+    <div class="panel-body">
+        <table class="table table-striped">
+            <tr>
+                <th>
+                    @Html.ActionLink("Last Name", "ManageStudents", new { sortOrder = ViewBag.NameSortParm, currentFilter = ViewBag.CurrentFilter })
+                </th>
+                <th>First Name</th>
+                <th>Username</th>
+                <th>
+                    @Html.ActionLink("Enrollment Date", "ManageStudents", new { sortOrder = ViewBag.DateSortParm, currentFilter = ViewBag.CurrentFilter })
+                </th>
+                <th>Courses</th>
+                <th>Actions</th>
+            </tr>
+
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.LastName</td>
+                    <td>@item.FirstMidName</td>
+                    <td>@item.UserName</td>
+                    <td>@item.EnrollmentDate.ToString("yyyy-MM-dd")</td>
+                    <td>@(item.Enrollments?.Count ?? 0)</td>
+                    <td>
+                        @Html.ActionLink("Details", "StudentDetails", "Administrator", new { id = item.ID }, new { @class = "btn btn-xs btn-info" })
+                        @Html.ActionLink("Edit", "EditStudent", "Administrator", new { id = item.ID }, new { @class = "btn btn-xs btn-primary" })
+                        @Html.ActionLink("Delete", "DeleteStudent", "Administrator", new { id = item.ID }, new { @class = "btn btn-xs btn-danger" })
+                    </td>
+                </tr>
+            }
+        </table>
+    </div>
+</div>
+
+Page @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) of @Model.PageCount
+@Html.PagedListPager(Model, page => Url.Action("ManageStudents",
+    new { page, sortOrder = ViewBag.CurrentSort, currentFilter = ViewBag.CurrentFilter }))
+
+<div class="well">
+    @Html.ActionLink("Back to Dashboard", "Dashboard", "Administrator", null, new { @class = "btn btn-default" })
+</div>

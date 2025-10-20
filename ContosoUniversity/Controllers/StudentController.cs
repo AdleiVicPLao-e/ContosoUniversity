@@ -1,202 +1,95 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.Entity;
 using System.Linq;
-using System.Net;
-using System.Web;
 using System.Web.Mvc;
-using ContosoUniversity.DAL;
 using ContosoUniversity.Models;
-using PagedList;
-using System.Data.Entity.Infrastructure;
+using ContosoUniversity.ViewModels;
 
 namespace ContosoUniversity.Controllers
 {
-    public class StudentController : Controller
+    public class StudentController : BaseController
     {
-        private SchoolContext db = new SchoolContext();
-
-        // GET: Students
-        public ViewResult Index(string sortOrder, string currentFilter, string searchString, int? page)
+        // GET: Student/Dashboard
+        public ActionResult Dashboard()
         {
-            ViewBag.CurrentSort = sortOrder;
-            ViewBag.NameSortParm = String.IsNullOrEmpty(sortOrder) ? "name_desc" : "";
-            ViewBag.DateSortParm = sortOrder == "Date" ? "date_desc" : "Date";
+            RequireRole(Person.UserRole.Student);
 
-            if (searchString != null)
-            {
-                page = 1;
-            }
-            else
-            {
-                searchString = currentFilter;
-            }
+            var student = db.Students
+                .Include(s => s.Enrollments.Select(e => e.Course))
+                .First(s => s.ID == CurrentUser.ID);
 
-            ViewBag.CurrentFilter = searchString;
-
-            var students = from s in db.Students
-                           select s;
-            if (!String.IsNullOrEmpty(searchString))
-            {
-                students = students.Where(s => s.LastName.Contains(searchString)
-                                       || s.FirstMidName.Contains(searchString));
-            }
-            switch (sortOrder)
-            {
-                case "name_desc":
-                    students = students.OrderByDescending(s => s.LastName);
-                    break;
-                case "Date":
-                    students = students.OrderBy(s => s.EnrollmentDate);
-                    break;
-                case "date_desc":
-                    students = students.OrderByDescending(s => s.EnrollmentDate);
-                    break;
-                default:
-                    students = students.OrderBy(s => s.LastName);
-                    break;
-            }
-            int pageSize = 3;
-            int pageNumber = (page ?? 1);
-            return View(students.ToPagedList(pageNumber, pageSize));
-        }
-
-        // GET: Students/Details/5
-        public ActionResult Details(int? id)
-        {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            Student student = db.Students.Find(id);
-            if (student == null)
-            {
-                return HttpNotFound();
-            }
             return View(student);
         }
 
-        // GET: Students/Create
-        public ActionResult Create()
+        // GET: Student/MyGrades
+        public ActionResult MyGrades()
         {
-            return View();
+            RequireRole(Person.UserRole.Student);
+
+            var student = db.Students
+                .Include(s => s.Enrollments.Select(e => e.Course))
+                .First(s => s.ID == CurrentUser.ID);
+
+            return View(student.Enrollments.ToList());
         }
 
-        // POST: Students/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
-        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
+        // GET: Student/AvailableCourses
+        public ActionResult AvailableCourses()
+        {
+            RequireRole(Person.UserRole.Student);
+
+            var courses = db.Courses
+                .Include(c => c.Department)
+                .Include(c => c.Instructors)
+                .Where(c => c.Enrollments.Count < 50) // Example: capacity limit
+                .ToList();
+
+            return View(courses);
+        }
+
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "LastName,FirstMidName,EnrollmentDate")] Student student)
+        public ActionResult EnrollInCourse(int courseId)
         {
-            try
+            RequireRole(Person.UserRole.Student);
+
+            var student = db.Students.Find(CurrentUser.ID);
+            var course = db.Courses.Find(courseId);
+
+            // Check if already enrolled
+            if (student.Enrollments.Any(e => e.CourseID == courseId))
             {
-                if (ModelState.IsValid)
-                {
-                    db.Students.Add(student);
-                    db.SaveChanges();
-                    return RedirectToAction("Index");
-                }
-            }
-            catch (RetryLimitExceededException /* dex */)
-            {
-                ModelState.AddModelError("", "Unable to save changes. Try again, and if the problem persists see your system administrator.");
+                TempData["Error"] = "You are already enrolled in this course";
+                return RedirectToAction("AvailableCourses");
             }
 
-            return View(student);
+            var enrollment = new Enrollment
+            {
+                StudentID = student.ID,
+                CourseID = courseId,
+                Grade = null
+            };
+
+            db.Enrollments.Add(enrollment);
+            db.SaveChanges();
+
+            TempData["Success"] = "Successfully enrolled in course";
+            return RedirectToAction("Dashboard");
         }
 
-        // GET: Students/Edit/5
-        public ActionResult Edit(int? id)
-        {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            Student student = db.Students.Find(id);
-            if (student == null)
-            {
-                return HttpNotFound();
-            }
-            return View(student);
-        }
-
-        // POST: Students/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
-        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost, ActionName("Edit")]
-        [ValidateAntiForgeryToken]
-        public ActionResult EditPost(int? id)
-        {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            var studentToUpdate = db.Students.Find(id);
-            if (TryUpdateModel(studentToUpdate, "",
-               new string[] { "LastName", "FirstMidName", "EnrollmentDate" }))
-            {
-                try
-                {
-                    db.SaveChanges();
-
-                    return RedirectToAction("Index");
-                }
-                catch (RetryLimitExceededException /* dex */)
-                {
-                    //Log the error (uncomment dex variable name and add a line here to write a log.
-                    ModelState.AddModelError("", "Unable to save changes. Try again, and if the problem persists, see your system administrator.");
-                }
-            }
-            return View(studentToUpdate);
-        }
-
-        // GET: Students/Delete/5
-        public ActionResult Delete(int? id, bool? saveChangesError = false)
-        {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            if (saveChangesError.GetValueOrDefault())
-            {
-                ViewBag.ErrorMessage = "Delete failed. Try again, and if the problem persists see your system administrator.";
-            }
-            Student student = db.Students.Find(id);
-            if (student == null)
-            {
-                return HttpNotFound();
-            }
-            return View(student);
-        }
-
-        // POST: Students/Delete/5
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id)
+        public ActionResult DropCourse(int enrollmentId)
         {
-            try
-            {
-                Student student = db.Students.Find(id);
-                db.Students.Remove(student);
-                db.SaveChanges();
-            }
-            catch (RetryLimitExceededException/* dex */)
-            {
-                //Log the error (uncomment dex variable name and add a line here to write a log.
-                return RedirectToAction("Delete", new { id = id, saveChangesError = true });
-            }
-            return RedirectToAction("Index");
-        }
+            RequireRole(Person.UserRole.Student);
 
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                db.Dispose();
-            }
-            base.Dispose(disposing);
+            var enrollment = db.Enrollments
+                .First(e => e.EnrollmentID == enrollmentId && e.StudentID == CurrentUser.ID);
+
+            db.Enrollments.Remove(enrollment);
+            db.SaveChanges();
+
+            TempData["Success"] = "Successfully dropped course";
+            return RedirectToAction("Dashboard");
         }
     }
 }

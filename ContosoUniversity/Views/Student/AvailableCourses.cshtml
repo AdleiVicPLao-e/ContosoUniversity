@@ -1,0 +1,93 @@
+@model IEnumerable<ContosoUniversity.Models.Course>
+
+@{
+    ViewBag.Title = "Available Courses";
+}
+
+<h2>Available Courses</h2>
+
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">Browse Courses</h3>
+    </div>
+    <div class="panel-body">
+        @if (Model.Any())
+        {
+            <div class="row">
+                @foreach (var course in Model)
+                {
+                    <div class="col-md-4">
+                        <div class="panel panel-@(course.AvailableSpots > 0 ? "default" : "warning")">
+                            <div class="panel-heading">
+                                <h4 class="panel-title">@course.Title</h4>
+                            </div>
+                            <div class="panel-body">
+                                <p><strong>Course ID:</strong> @course.CourseID</p>
+                                <p><strong>Department:</strong> @course.Department.Name</p>
+                                <p><strong>Credits:</strong> @course.Credits</p>
+                                <p>
+                                    <strong>Available Spots:</strong>
+                                    <span class="label label-@(course.AvailableSpots > 0 ? "success" : "danger")">
+                                        @course.AvailableSpots / @course.Capacity
+                                    </span>
+                                </p>
+                                <p>
+                                    <strong>Instructors:</strong>
+                                    @string.Join(", ", course.Instructors.Select(i => i.FullName))
+                                </p>
+                                @if (!string.IsNullOrEmpty(course.Description))
+                                {
+                                    <p><strong>Description:</strong> @course.Description</p>
+                                }
+                            </div>
+                            <div class="panel-footer">
+                                @if (course.AvailableSpots > 0 && course.IsActive)
+                                {
+                                    using (Html.BeginForm("EnrollInCourse", "Student", new { courseId = course.CourseID }, FormMethod.Post))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-success btn-sm">Enroll Now</button>
+                                    }
+                                }
+                                else if (!course.IsActive)
+                                {
+                                    <span class="label label-default">Course Not Active</span>
+                                }
+                                else
+                                {
+                                    <span class="label label-danger">Course Full</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-warning">
+                <h4>No Available Courses</h4>
+                <p>There are currently no courses available for enrollment. Please check back later.</p>
+            </div>
+        }
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
+<div class="well">
+    @Html.ActionLink("Back to Dashboard", "Dashboard", null, new { @class = "btn btn-default" })
+    @Html.ActionLink("View My Grades", "MyGrades", null, new { @class = "btn btn-primary" })
+</div>

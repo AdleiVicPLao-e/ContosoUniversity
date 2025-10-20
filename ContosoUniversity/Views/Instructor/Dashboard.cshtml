@@ -1,0 +1,159 @@
+@model ContosoUniversity.ViewModels.InstructorDashboardViewModel
+
+@{
+    ViewBag.Title = "Instructor Dashboard";
+}
+
+<h2>Welcome, @Model.Instructor.FirstMidName!</h2>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h3 class="panel-title">Total Students</h3>
+            </div>
+            <div class="panel-body">
+                <h4>@Model.TotalStudents</h4>
+                <p>Across all courses</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="panel panel-success">
+            <div class="panel-heading">
+                <h3 class="panel-title">Active Courses</h3>
+            </div>
+            <div class="panel-body">
+                <h4>@Model.ActiveCourses</h4>
+                <p>Currently teaching</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                <h3 class="panel-title">Average Students</h3>
+            </div>
+            <div class="panel-body">
+                <h4>@Model.AverageStudentsPerCourse.ToString("F1")</h4>
+                <p>Per course</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="panel panel-warning">
+            <div class="panel-heading">
+                <h3 class="panel-title">Courses Needing Grades</h3>
+            </div>
+            <div class="panel-body">
+                <h4>@Model.CoursesNeedingGrades</h4>
+                <p>Require attention</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Upcoming Deadlines</h3>
+            </div>
+            <div class="panel-body">
+                @if (Model.UpcomingDeadlines.Any())
+                {
+                    <div class="list-group">
+                        @foreach (var deadline in Model.UpcomingDeadlines)
+                        {
+                            <div class="list-group-item">
+                                <span class="glyphicon glyphicon-time text-warning"></span>
+                                @deadline
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted">No upcoming deadlines</p>
+                }
+            </div>
+        </div>
+
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Instructor Information</h3>
+            </div>
+            <div class="panel-body">
+                <dl class="dl-horizontal">
+                    <dt>Name:</dt>
+                    <dd>@Model.Instructor.FullName</dd>
+                    <dt>Username:</dt>
+                    <dd>@Model.Instructor.UserName</dd>
+                    <dt>Hire Date:</dt>
+                    <dd>@Model.Instructor.HireDate.ToString("MMMM dd, yyyy")</dd>
+                    <dt>Specialization:</dt>
+                    <dd>@(Model.Instructor.Specialization ?? "Not specified")</dd>
+                    <dt>Office:</dt>
+                    <dd>@(Model.Instructor.OfficeAssignment?.Location ?? "No office assigned")</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Recent Enrollments</h3>
+            </div>
+            <div class="panel-body">
+                @if (Model.RecentEnrollments.Any())
+                {
+                    <div class="list-group">
+                        @foreach (var enrollment in Model.RecentEnrollments)
+                        {
+                            <div class="list-group-item">
+                                <h5 class="list-group-item-heading">@enrollment.Student.FullName</h5>
+                                <p class="list-group-item-text">
+                                    Enrolled in <strong>@enrollment.Course.Title</strong><br />
+                                    <small class="text-muted">@enrollment.Course.Department.Name</small>
+                                </p>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted">No recent enrollments</p>
+                }
+            </div>
+        </div>
+
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Quick Actions</h3>
+            </div>
+            <div class="panel-body">
+                <div class="btn-group-vertical" style="width: 100%;">
+                    @Html.ActionLink("View My Courses", "MyCourses", null, new { @class = "btn btn-primary btn-block text-left" })
+                    @Html.ActionLink("My Teaching Schedule", "MySchedule", null, new { @class = "btn btn-default btn-block text-left" })
+                    @if (Model.Instructor.OfficeAssignment != null)
+                    {
+                        @Html.ActionLink("Office Information", "Edit", "OfficeAssignment", new { id = Model.Instructor.ID }, new { @class = "btn btn-default btn-block text-left" })
+                    }
+                    else
+                    {
+                        @Html.ActionLink("Request Office", "Create", "OfficeAssignment", null, new { @class = "btn btn-default btn-block text-left" })
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        @TempData["Success"]
+    </div>
+}

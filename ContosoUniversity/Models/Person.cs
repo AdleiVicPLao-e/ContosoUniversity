@@ -1,16 +1,32 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using ContosoUniversity.Helpers;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ContosoUniversity.Models
 {
     public abstract class Person
     {
+        // Move enum outside the class for better accessibility
+        public enum UserRole
+        {
+            Student = 1,
+            Instructor = 2,
+            Administrator = 4
+        }
+
         public int ID { get; set; }
+
+        private string username;
 
         [Required]
         [StringLength(50)]
-        public string UserName { get; set; }
+        public string UserName
+        {
+            get { return username; }
+            set { username = value; }
+        }
 
         private string password;
 
@@ -47,5 +63,59 @@ namespace ContosoUniversity.Models
 
         [Display(Name = "Full Name")]
         public string FullName => $"{LastName}, {FirstMidName}";
+
+        // Multi-role support using bit flags
+        [Required]
+        public UserRole Roles { get; set; }
+
+        // Individual role checkers
+        [NotMapped]
+        public bool IsStudent => HasRole(UserRole.Student);
+        [NotMapped]
+        public bool IsInstructor => HasRole(UserRole.Instructor);
+        [NotMapped]
+        public bool IsAdministrator => HasRole(UserRole.Administrator);
+
+        // Primary role for display/UI purposes
+        [NotMapped]
+        public UserRole PrimaryRole
+        {
+            get
+            {
+                if (HasRole(UserRole.Administrator)) return UserRole.Administrator;
+                if (HasRole(UserRole.Instructor)) return UserRole.Instructor;
+                if (HasRole(UserRole.Student)) return UserRole.Student;
+                return UserRole.Student; // default
+            }
+        }
+
+        // Role management methods
+        public bool HasRole(UserRole role)
+        {
+            return (Roles & role) == role;
+        }
+
+        public void AddRole(UserRole role)
+        {
+            Roles |= role;
+        }
+
+        public void RemoveRole(UserRole role)
+        {
+            Roles &= ~role;
+        }
+
+        public IEnumerable<UserRole> GetRoles()
+        {
+            return System.Enum.GetValues(typeof(UserRole))
+                .Cast<UserRole>()
+                .Where(role => HasRole(role));
+        }
+
+        // Validation to ensure at least one role is set
+        protected virtual bool ValidateRoles()
+        {
+            return Roles != 0; // At least one role must be set
+        }
     }
 }

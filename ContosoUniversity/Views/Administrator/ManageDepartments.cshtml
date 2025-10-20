@@ -1,0 +1,68 @@
+@model IEnumerable<ContosoUniversity.Models.Department>
+
+@{
+    ViewBag.Title = "Manage Departments";
+}
+
+<h2>Manage Departments</h2>
+
+<p>
+    @Html.ActionLink("Create New Department", "CreateDepartment", "Administrator", null, new { @class = "btn btn-primary" })
+</p>
+
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">Departments</h3>
+    </div>
+    <div class="panel-body">
+        <table class="table table-striped">
+            <tr>
+                <th>Name</th>
+                <th>Budget</th>
+                <th>Start Date</th>
+                <th>Administrator</th>
+                <th>Courses</th>
+                <th>Actions</th>
+            </tr>
+
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Name</td>
+                    <td>@String.Format("{0:C}", item.Budget)</td>
+                    <td>@item.StartDate.ToString("yyyy-MM-dd")</td>
+                    <td>
+                        @if (item.Administrator != null)
+                        {
+                            @item.Administrator.FullName
+                        }
+                        else
+                        {
+                            <span class="text-muted">Not assigned</span>
+                        }
+                    </td>
+                    <td>@item.Courses.Count</td>
+                    <td>
+                        <div class="btn-group-vertical">
+                            @Html.ActionLink("Details", "DepartmentDetails", "Administrator", new { id = item.DepartmentID }, new { @class = "btn btn-xs btn-info" })
+                            @Html.ActionLink("Edit", "EditDepartment", "Administrator", new { id = item.DepartmentID }, new { @class = "btn btn-xs btn-primary" })
+                            @Html.ActionLink("Delete", "DeleteDepartment", "Administrator", new { id = item.DepartmentID }, new { @class = "btn btn-xs btn-danger" })
+                        </div>
+                    </td>
+                </tr>
+            }
+        </table>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+<div class="well">
+    @Html.ActionLink("Back to Dashboard", "Dashboard", "Administrator", null, new { @class = "btn btn-default" })
+    @Html.ActionLink("Manage Courses", "ManageCourses", "Administrator", null, new { @class = "btn btn-default" })
+</div>

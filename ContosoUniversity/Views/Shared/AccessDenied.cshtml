@@ -1,0 +1,47 @@
+@{
+    ViewBag.Title = "Access Denied";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    // Determine dashboard URL based on user role
+    string dashboardUrl = "";
+    if (ViewBag.CurrentUser != null)
+    {
+        if (ViewBag.CurrentUser.IsAdministrator)
+        {
+            dashboardUrl = Url.Action("Dashboard", "Administrator");
+        }
+        else if (ViewBag.CurrentUser.IsInstructor)
+        {
+            dashboardUrl = Url.Action("Dashboard", "Instructor");
+        }
+        else if (ViewBag.CurrentUser.IsStudent)
+        {
+            dashboardUrl = Url.Action("Dashboard", "Student");
+        }
+    }
+}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 col-md-offset-3">
+            <div class="panel panel-danger">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Access Denied</h3>
+                </div>
+                <div class="panel-body text-center">
+                    <span class="glyphicon glyphicon-ban-circle" style="font-size: 64px; color: #d9534f;"></span>
+                    <h2>Access Denied</h2>
+                    <p class="lead">You don't have permission to access this page.</p>
+                    <p>Please contact your administrator if you believe this is an error.</p>
+                    <div class="btn-group">
+                        @if (!string.IsNullOrEmpty(dashboardUrl))
+                        {
+                            <a href="@dashboardUrl" class="btn btn-primary">Go to Dashboard</a>
+                        }
+                        @Html.ActionLink("Go to Home", "Index", "Home", null, new { @class = "btn btn-default" })
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

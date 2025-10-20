@@ -1,0 +1,159 @@
+﻿using ContosoUniversity.Models;
+using System;
+using System.Web.Mvc;
+using System.Web.Razor.Parser.SyntaxTree;
+using System.Web.UI.WebControls;
+
+@model ContosoUniversity.Models.Student
+
+@{
+    ViewBag.Title = "Student Dashboard";
+}
+
+< h2 > Welcome, @Model.FirstMidName! </ h2 >
+
+< div class= "row" >
+    < div class= "col-md-3" >
+        < div class= "panel panel-primary" >
+            < div class= "panel-heading" >
+                < h3 class= "panel-title" > My Courses </ h3 >
+            </ div >
+            < div class= "panel-body" >
+                < h4 > @Model.Enrollments.Count </ h4 >
+                < p > Currently enrolled </ p >
+            </ div >
+        </ div >
+    </ div >
+    < div class= "col-md-3" >
+        < div class= "panel panel-success" >
+            < div class= "panel-heading" >
+                < h3 class= "panel-title" > Student ID </ h3 >
+            </ div >
+            < div class= "panel-body" >
+                < h4 > @Model.StudentCode </ h4 >
+                < p > Your student code</p>
+            </div>
+        </div>
+    </div>
+    <div class= "col-md-3" >
+        < div class= "panel panel-info" >
+            < div class= "panel-heading" >
+                < h3 class= "panel-title" > Enrollment Date </ h3 >
+            </ div >
+            < div class= "panel-body" >
+                < h4 > @Model.EnrollmentDate.ToString("MMM yyyy") </ h4 >
+                < p > Since you joined</p>
+            </div>
+        </div>
+    </div>
+    <div class= "col-md-3" >
+        < div class= "panel panel-warning" >
+            < div class= "panel-heading" >
+                < h3 class= "panel-title" > Graded Courses </ h3 >
+            </ div >
+            < div class= "panel-body" >
+                < h4 > @Model.Enrollments.Count(e => e.Grade.HasValue) </ h4 >
+                < p > Courses with grades</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class= "row" >
+    < div class= "col-md-6" >
+        < div class= "panel panel-default" >
+            < div class= "panel-heading" >
+                < h3 class= "panel-title" > My Current Courses</h3>
+            </div>
+            <div class= "panel-body" >
+                @if(Model.Enrollments.Any())
+                {
+                    < div class= "list-group" >
+                        @foreach(var enrollment in Model.Enrollments.Take(5))
+                        {
+                            < div class= "list-group-item" >
+                                < h5 class= "list-group-item-heading" > @enrollment.Course.Title </ h5 >
+                                < p class= "list-group-item-text" >
+                                    < strong > Course ID:</ strong > @enrollment.Course.CourseID < br />
+                                    < strong > Credits:</ strong > @enrollment.Course.Credits < br />
+                                    < strong > Grade:</ strong >
+                                    @if(enrollment.Grade.HasValue)
+                                    {
+                                        < span class= "label label-success" > @enrollment.Grade </ span >
+                                    }
+                                    else
+{
+                                        < span class= "label label-warning" > No Grade Yet</span>
+                                    }
+                                </ p >
+                                @using(Html.BeginForm("DropCourse", "Student", new { enrollmentId = enrollment.EnrollmentID }, FormMethod.Post, new { style = "display:inline" }))
+                                {
+    @Html.AntiForgeryToken()
+    < button type = "submit" class= "btn btn-xs btn-danger" onclick = "return confirm('Are you sure you want to drop this course?')" > Drop Course </ button >
+                                }
+                            </ div >
+                        }
+                    </ div >
+                    @if(Model.Enrollments.Count > 5)
+                    {
+                        < p class= "text-center" >
+                            < small > Showing 5 of @Model.Enrollments.Count courses</small>
+                        </p>
+                    }
+                }
+                else
+{
+                    < p > You are not enrolled in any courses yet.</ p >
+                    @Html.ActionLink("Browse Available Courses", "AvailableCourses", null, new { @class = "btn btn-primary" })
+                }
+            </ div >
+        </ div >
+    </ div >
+    < div class= "col-md-6" >
+        < div class= "panel panel-default" >
+            < div class= "panel-heading" >
+                < h3 class= "panel-title" > Quick Actions </ h3 >
+            </ div >
+            < div class= "panel-body" >
+                < div class= "list-group" >
+                    @Html.ActionLink("View All My Grades", "MyGrades", null, new { @class = "list-group-item" })
+                    @Html.ActionLink("Browse Available Courses", "AvailableCourses", null, new { @class = "list-group-item" })
+                    @Html.ActionLink("My Course Schedule", "MySchedule", null, new { @class = "list-group-item" })
+                </ div >
+            </ div >
+        </ div >
+
+
+        < div class= "panel panel-default" >
+            < div class= "panel-heading" >
+                < h3 class= "panel-title" > Student Information </ h3 >
+            </ div >
+            < div class= "panel-body" >
+                < dl class= "dl-horizontal" >
+                    < dt > Full Name:</ dt >
+                    < dd > @Model.FullName </ dd >
+                    < dt > Username:</ dt >
+                    < dd > @Model.UserName </ dd >
+                    < dt > Student ID:</ dt >
+                    < dd > @Model.StudentCode </ dd >
+                    < dt > Enrollment Date:</ dt >
+                    < dd > @Model.EnrollmentDate.ToString("MMMM dd, yyyy") </ dd >
+                </ dl >
+            </ div >
+        </ div >
+    </ div >
+</ div >
+
+@if(TempData["Success"] != null)
+{
+    < div class= "alert alert-success" >
+        @TempData["Success"]
+    </ div >
+}
+
+@if(TempData["Error"] != null)
+{
+    < div class= "alert alert-danger" >
+        @TempData["Error"]
+    </ div >
+}
