@@ -31,22 +31,26 @@ namespace ContosoUniversity.Controllers
                     ActiveCourses = db.Courses.Count(c => c.Enrollments.Count > 0),
                     RecentEnrollments = db.Enrollments
                         .Include(e => e.Student)
-                        .Include(e => e.Course)
+                        .Include(e => e.Course.Department) // Include Course Department
+                        .Include(e => e.Course.Instructors) // Include Course Instructors
                         .OrderByDescending(e => e.EnrollmentID)
                         .Take(10)
                         .ToList(),
                     RecentCourses = db.Courses
                         .Include(c => c.Department)
+                        .Include(c => c.Instructors) // Include Instructors
+                        .Include(c => c.Enrollments) // Include Enrollments
                         .OrderByDescending(c => c.CourseID)
                         .Take(5)
                         .ToList(),
                     ShowQuickActions = true
                 };
 
-                // Fix DepartmentStatistics with null checks
+                // Fix DepartmentStatistics with null checks and eager loading
                 var departments = db.Departments
-                    .Include(d => d.Courses)
-                    .Include(d => d.Administrator)
+                    .Include(d => d.Courses.Select(c => c.Enrollments)) // Include Courses and Enrollments
+                    .Include(d => d.Administrator) // Include Administrator
+                    .Include(d => d.Courses.Select(c => c.Instructors)) // Include Course Instructors
                     .ToList();
 
                 viewModel.DepartmentStatistics = departments.Select(d => new DepartmentStats
@@ -54,18 +58,20 @@ namespace ContosoUniversity.Controllers
                     DepartmentName = d?.Name ?? "Unknown Department",
                     TotalCourses = d?.Courses?.Count ?? 0,
                     TotalStudents = d?.Courses?.Sum(c => c?.Enrollments?.Count ?? 0) ?? 0,
-                    TotalInstructors = db.Instructors.Count(i => i.Courses.Any(c => c.DepartmentID == d.DepartmentID)),
+                    TotalInstructors = db.Instructors
+                        .Include(i => i.Courses.Select(c => c.Department)) // Include Instructor Courses and Departments
+                        .Count(i => i.Courses.Any(c => c.DepartmentID == d.DepartmentID)),
                     BudgetUtilization = (d?.Budget ?? 0) > 0 ?
                         ((d?.Courses?.Sum(c => (c?.Credits ?? 0) * 1000m) ?? 0) / (d?.Budget ?? 1m)) : 0m,
                     DepartmentHead = d?.Administrator != null ?
                         $"{d.Administrator.FirstMidName} {d.Administrator.LastName}".Trim() : "Not Assigned"
                 }).ToList();
 
-                // Fix PopularCourses with null checks
+                // Fix PopularCourses with null checks and eager loading
                 var courses = db.Courses
                     .Include(c => c.Department)
-                    .Include(c => c.Instructors)
-                    .Include(c => c.Enrollments)
+                    .Include(c => c.Instructors.Select(i => i.OfficeAssignment)) // Include Instructors and OfficeAssignment
+                    .Include(c => c.Enrollments.Select(e => e.Student)) // Include Enrollments and Students
                     .ToList();
 
                 viewModel.PopularCourses = courses.Select(c => new CourseEnrollmentStats
@@ -82,11 +88,11 @@ namespace ContosoUniversity.Controllers
                 .Take(5)
                 .ToList();
 
-                // Fix InstructorWorkload with null checks
+                // Fix InstructorWorkload with null checks and eager loading
                 var instructors = db.Instructors
                     .Include(i => i.OfficeAssignment)
-                    .Include(i => i.Courses.Select(c => c.Department))
-                    .Include(i => i.Courses.Select(c => c.Enrollments))
+                    .Include(i => i.Courses.Select(c => c.Department)) // Include Courses and Departments
+                    .Include(i => i.Courses.Select(c => c.Enrollments.Select(e => e.Student))) // Include Courses, Enrollments, and Students
                     .ToList();
 
                 viewModel.InstructorWorkload = instructors.Select(i => new InstructorStats
@@ -128,8 +134,8 @@ namespace ContosoUniversity.Controllers
 
             var courses = db.Courses
                 .Include(c => c.Department)
-                .Include(c => c.Instructors)
-                .Include(c => c.Enrollments)
+                .Include(c => c.Instructors.Select(i => i.OfficeAssignment)) // Include Instructors and OfficeAssignment
+                .Include(c => c.Enrollments.Select(e => e.Student)) // Include Enrollments and Students
                 .AsQueryable();
 
             if (departmentId.HasValue)
@@ -175,7 +181,9 @@ namespace ContosoUniversity.Controllers
         {
             RequireRole(Person.UserRole.Administrator);
             PopulateDepartmentsDropDownList();
-            ViewBag.Instructors = new MultiSelectList(db.Instructors, "ID", "FullName");
+            ViewBag.Instructors = new MultiSelectList(db.Instructors
+                .Include(i => i.OfficeAssignment) // Include OfficeAssignment
+                .ToList(), "ID", "FullName");
             return View();
         }
 
@@ -193,6 +201,7 @@ namespace ContosoUniversity.Controllers
                     if (selectedInstructors != null)
                     {
                         course.Instructors = db.Instructors
+                            .Include(i => i.OfficeAssignment) // Include OfficeAssignment
                             .Where(i => selectedInstructors.Contains(i.ID))
                             .ToList();
                     }
@@ -209,7 +218,9 @@ namespace ContosoUniversity.Controllers
             }
 
             PopulateDepartmentsDropDownList(course.DepartmentID);
-            ViewBag.Instructors = new MultiSelectList(db.Instructors, "ID", "FullName", selectedInstructors);
+            ViewBag.Instructors = new MultiSelectList(db.Instructors
+                .Include(i => i.OfficeAssignment) // Include OfficeAssignment
+                .ToList(), "ID", "FullName", selectedInstructors);
             return View(course);
         }
 
@@ -224,7 +235,9 @@ namespace ContosoUniversity.Controllers
             }
 
             Course course = db.Courses
-                .Include(c => c.Instructors)
+                .Include(c => c.Instructors.Select(i => i.OfficeAssignment)) // Include Instructors and OfficeAssignment
+                .Include(c => c.Department) // Include Department
+                .Include(c => c.Enrollments.Select(e => e.Student)) // Include Enrollments and Students
                 .FirstOrDefault(c => c.CourseID == id);
 
             if (course == null)
@@ -233,7 +246,9 @@ namespace ContosoUniversity.Controllers
             }
 
             PopulateDepartmentsDropDownList(course.DepartmentID);
-            ViewBag.Instructors = new MultiSelectList(db.Instructors, "ID", "FullName",
+            ViewBag.Instructors = new MultiSelectList(db.Instructors
+                .Include(i => i.OfficeAssignment) // Include OfficeAssignment
+                .ToList(), "ID", "FullName",
                 course.Instructors.Select(i => i.ID));
             return View(course);
         }
@@ -248,7 +263,8 @@ namespace ContosoUniversity.Controllers
             if (ModelState.IsValid)
             {
                 var courseToUpdate = db.Courses
-                    .Include(c => c.Instructors)
+                    .Include(c => c.Instructors.Select(i => i.OfficeAssignment)) // Include Instructors and OfficeAssignment
+                    .Include(c => c.Department) // Include Department
                     .FirstOrDefault(c => c.CourseID == course.CourseID);
 
                 if (courseToUpdate == null)
@@ -271,7 +287,9 @@ namespace ContosoUniversity.Controllers
             }
 
             PopulateDepartmentsDropDownList(course.DepartmentID);
-            ViewBag.Instructors = new MultiSelectList(db.Instructors, "ID", "FullName", selectedInstructors);
+            ViewBag.Instructors = new MultiSelectList(db.Instructors
+                .Include(i => i.OfficeAssignment) // Include OfficeAssignment
+                .ToList(), "ID", "FullName", selectedInstructors);
             return View(course);
         }
 
@@ -287,8 +305,8 @@ namespace ContosoUniversity.Controllers
 
             Course course = db.Courses
                 .Include(c => c.Department)
-                .Include(c => c.Instructors)
-                .Include(c => c.Enrollments.Select(e => e.Student))
+                .Include(c => c.Instructors.Select(i => i.OfficeAssignment)) // Include Instructors and OfficeAssignment
+                .Include(c => c.Enrollments.Select(e => e.Student)) // Include Enrollments and Students
                 .FirstOrDefault(c => c.CourseID == id);
 
             if (course == null)
@@ -309,7 +327,12 @@ namespace ContosoUniversity.Controllers
                 return new HttpStatusCodeResult(System.Net.HttpStatusCode.BadRequest);
             }
 
-            Course course = db.Courses.Find(id);
+            Course course = db.Courses
+                .Include(c => c.Department) // Include Department
+                .Include(c => c.Instructors.Select(i => i.OfficeAssignment)) // Include Instructors and OfficeAssignment
+                .Include(c => c.Enrollments.Select(e => e.Student)) // Include Enrollments and Students
+                .FirstOrDefault(c => c.CourseID == id);
+
             if (course == null)
             {
                 return HttpNotFound();
@@ -325,10 +348,18 @@ namespace ContosoUniversity.Controllers
         {
             RequireRole(Person.UserRole.Administrator);
 
-            Course course = db.Courses.Find(id);
-            db.Courses.Remove(course);
-            db.SaveChanges();
-            TempData["Success"] = "Course deleted successfully";
+            Course course = db.Courses
+                .Include(c => c.Instructors) // Include Instructors
+                .Include(c => c.Enrollments) // Include Enrollments
+                .FirstOrDefault(c => c.CourseID == id);
+
+            if (course != null)
+            {
+                db.Courses.Remove(course);
+                db.SaveChanges();
+                TempData["Success"] = "Course deleted successfully";
+            }
+
             return RedirectToAction("ManageCourses");
         }
 
@@ -338,7 +369,11 @@ namespace ContosoUniversity.Controllers
         {
             RequireRole(Person.UserRole.Administrator);
 
-            var course = db.Courses.Find(id);
+            var course = db.Courses
+                .Include(c => c.Instructors) // Include Instructors
+                .Include(c => c.Enrollments) // Include Enrollments
+                .FirstOrDefault(c => c.CourseID == id);
+
             if (course != null)
             {
                 course.IsActive = !course.IsActive;
@@ -372,9 +407,9 @@ namespace ContosoUniversity.Controllers
 
         private void PopulateDepartmentsDropDownList(object selectedDepartment = null)
         {
-            var departmentsQuery = from d in db.Departments
-                                   orderby d.Name
-                                   select d;
+            var departmentsQuery = db.Departments
+                .Include(d => d.Administrator) // Include Administrator
+                .OrderBy(d => d.Name);
             ViewBag.DepartmentID = new SelectList(departmentsQuery, "DepartmentID", "Name", selectedDepartment);
         }
 
@@ -386,7 +421,10 @@ namespace ContosoUniversity.Controllers
         public async Task<ActionResult> ManageDepartments()
         {
             RequireRole(Person.UserRole.Administrator);
-            var departments = db.Departments.Include(d => d.Administrator);
+            var departments = db.Departments
+                .Include(d => d.Administrator) // Include Administrator
+                .Include(d => d.Courses.Select(c => c.Instructors)) // Include Courses and Instructors
+                .Include(d => d.Courses.Select(c => c.Enrollments)); // Include Courses and Enrollments
             return View(await departments.ToListAsync());
         }
 
@@ -400,8 +438,11 @@ namespace ContosoUniversity.Controllers
                 return new HttpStatusCodeResult(System.Net.HttpStatusCode.BadRequest);
             }
 
-            string query = "SELECT * FROM Department WHERE DepartmentID = @p0";
-            Department department = await db.Departments.SqlQuery(query, id).SingleOrDefaultAsync();
+            Department department = await db.Departments
+                .Include(d => d.Administrator) // Include Administrator
+                .Include(d => d.Courses.Select(c => c.Instructors.Select(i => i.OfficeAssignment))) // Include Courses, Instructors, and OfficeAssignment
+                .Include(d => d.Courses.Select(c => c.Enrollments.Select(e => e.Student))) // Include Courses, Enrollments, and Students
+                .FirstOrDefaultAsync(d => d.DepartmentID == id);
 
             if (department == null)
             {
@@ -414,8 +455,9 @@ namespace ContosoUniversity.Controllers
         public ActionResult CreateDepartment()
         {
             RequireRole(Person.UserRole.Administrator);
-            // Updated to use AdministratorID and filter by Administrator role
-            ViewBag.AdministratorID = new SelectList(db.Administrators, "ID", "FullName");
+            // Updated to use AdministratorID and filter by Administrator role with eager loading
+            ViewBag.AdministratorID = new SelectList(db.Administrators
+                .ToList(), "ID", "FullName");
             return View();
         }
 
@@ -434,7 +476,8 @@ namespace ContosoUniversity.Controllers
                 return RedirectToAction("ManageDepartments");
             }
 
-            ViewBag.AdministratorID = new SelectList(db.Administrators, "ID", "FullName", department.AdministratorID);
+            ViewBag.AdministratorID = new SelectList(db.Administrators
+                .ToList(), "ID", "FullName", department.AdministratorID);
             return View(department);
         }
 
@@ -448,14 +491,19 @@ namespace ContosoUniversity.Controllers
                 return new HttpStatusCodeResult(System.Net.HttpStatusCode.BadRequest);
             }
 
-            Department department = await db.Departments.FindAsync(id);
+            Department department = await db.Departments
+                .Include(d => d.Administrator) // Include Administrator
+                .Include(d => d.Courses) // Include Courses
+                .FirstOrDefaultAsync(d => d.DepartmentID == id);
+
             if (department == null)
             {
                 return HttpNotFound();
             }
 
-            // Updated to use AdministratorID
-            ViewBag.AdministratorID = new SelectList(db.Administrators, "ID", "FullName", department.AdministratorID);
+            // Updated to use AdministratorID with eager loading
+            ViewBag.AdministratorID = new SelectList(db.Administrators
+                .ToList(), "ID", "FullName", department.AdministratorID);
             return View(department);
         }
 
@@ -474,14 +522,19 @@ namespace ContosoUniversity.Controllers
                 return new HttpStatusCodeResult(System.Net.HttpStatusCode.BadRequest);
             }
 
-            var departmentToUpdate = await db.Departments.FindAsync(id);
+            var departmentToUpdate = await db.Departments
+                .Include(d => d.Administrator) // Include Administrator
+                .Include(d => d.Courses) // Include Courses
+                .FirstOrDefaultAsync(d => d.DepartmentID == id);
+
             if (departmentToUpdate == null)
             {
                 Department deletedDepartment = new Department();
                 TryUpdateModel(deletedDepartment, fieldsToBind);
                 ModelState.AddModelError(string.Empty,
                     "Unable to save changes. The department was deleted by another user.");
-                ViewBag.AdministratorID = new SelectList(db.Administrators, "ID", "FullName", deletedDepartment.AdministratorID);
+                ViewBag.AdministratorID = new SelectList(db.Administrators
+                    .ToList(), "ID", "FullName", deletedDepartment.AdministratorID);
                 return View(deletedDepartment);
             }
 
@@ -517,7 +570,8 @@ namespace ContosoUniversity.Controllers
                         if (databaseValues.AdministratorID != clientValues.AdministratorID)
                         {
                             var adminName = databaseValues.AdministratorID.HasValue ?
-                                db.Administrators.Find(databaseValues.AdministratorID)?.FullName : "None";
+                                db.Administrators
+                                    .FirstOrDefault(a => a.ID == databaseValues.AdministratorID)?.FullName : "None";
                             ModelState.AddModelError("AdministratorID", "Current value: " + adminName);
                         }
 
@@ -530,7 +584,8 @@ namespace ContosoUniversity.Controllers
                     ModelState.AddModelError("", "Unable to save changes. Try again, and if the problem persists, see your system administrator.");
                 }
             }
-            ViewBag.AdministratorID = new SelectList(db.Administrators, "ID", "FullName", departmentToUpdate.AdministratorID);
+            ViewBag.AdministratorID = new SelectList(db.Administrators
+                .ToList(), "ID", "FullName", departmentToUpdate.AdministratorID);
             return View(departmentToUpdate);
         }
 
@@ -544,7 +599,12 @@ namespace ContosoUniversity.Controllers
                 return new HttpStatusCodeResult(System.Net.HttpStatusCode.BadRequest);
             }
 
-            Department department = await db.Departments.FindAsync(id);
+            Department department = await db.Departments
+                .Include(d => d.Administrator) // Include Administrator
+                .Include(d => d.Courses.Select(c => c.Instructors)) // Include Courses and Instructors
+                .Include(d => d.Courses.Select(c => c.Enrollments)) // Include Courses and Enrollments
+                .FirstOrDefaultAsync(d => d.DepartmentID == id);
+
             if (department == null)
             {
                 if (concurrencyError.GetValueOrDefault())
@@ -591,10 +651,17 @@ namespace ContosoUniversity.Controllers
         public ActionResult AssignAdministratorToDepartment(int administratorId, int departmentId)
         {
             RequireRole(Person.UserRole.Administrator);
-            var department = db.Departments.Find(departmentId);
-            department.AdministratorID = administratorId;
-            db.SaveChanges();
-            TempData["Success"] = "Administrator assigned to department successfully";
+            var department = db.Departments
+                .Include(d => d.Administrator) // Include Administrator
+                .FirstOrDefault(d => d.DepartmentID == departmentId);
+
+            if (department != null)
+            {
+                department.AdministratorID = administratorId;
+                db.SaveChanges();
+                TempData["Success"] = "Administrator assigned to department successfully";
+            }
+
             return RedirectToAction("ManageDepartments");
         }
 
@@ -605,7 +672,8 @@ namespace ContosoUniversity.Controllers
         public ActionResult ManageUsers()
         {
             RequireRole(Person.UserRole.Administrator);
-            var users = db.People.ToList();
+            var users = db.People
+                .ToList();
             return View(users);
         }
 
@@ -628,7 +696,10 @@ namespace ContosoUniversity.Controllers
 
             ViewBag.CurrentFilter = searchString;
 
-            var students = db.Students.AsQueryable();
+            var students = db.Students
+                .Include(s => s.Enrollments.Select(e => e.Course.Department)) // Include Enrollments, Courses, and Departments
+                .Include(s => s.Enrollments.Select(e => e.Course.Instructors)) // Include Enrollments, Courses, and Instructors
+                .AsQueryable();
 
             if (!String.IsNullOrEmpty(searchString))
             {
@@ -692,7 +763,8 @@ namespace ContosoUniversity.Controllers
             }
 
             Student student = db.Students
-                .Include(s => s.Enrollments.Select(e => e.Course.Department))
+                .Include(s => s.Enrollments.Select(e => e.Course.Department)) // Include Enrollments, Courses, and Departments
+                .Include(s => s.Enrollments.Select(e => e.Course.Instructors.Select(i => i.OfficeAssignment))) // Include Enrollments, Courses, Instructors, and OfficeAssignment
                 .FirstOrDefault(s => s.ID == id);
 
             if (student == null)
@@ -707,8 +779,12 @@ namespace ContosoUniversity.Controllers
         public ActionResult AssignCourseToInstructor(int courseId, int instructorId)
         {
             RequireRole(Person.UserRole.Administrator);
-            var course = db.Courses.Include(c => c.Instructors).First(c => c.CourseID == courseId);
-            var instructor = db.Instructors.Find(instructorId);
+            var course = db.Courses
+                .Include(c => c.Instructors.Select(i => i.OfficeAssignment)) // Include Instructors and OfficeAssignment
+                .First(c => c.CourseID == courseId);
+            var instructor = db.Instructors
+                .Include(i => i.OfficeAssignment) // Include OfficeAssignment
+                .First(i => i.ID == instructorId);
             course.Instructors.Add(instructor);
             db.SaveChanges();
             return RedirectToAction("ManageCourses");
@@ -740,7 +816,9 @@ namespace ContosoUniversity.Controllers
                 viewModel.InstructorData.Enrollments = GetCourseEnrollments(courseID.Value);
             }
 
-            ViewBag.Departments = new SelectList(db.Departments, "DepartmentID", "Name", departmentFilter);
+            ViewBag.Departments = new SelectList(db.Departments
+                .Include(d => d.Administrator) // Include Administrator
+                .ToList(), "DepartmentID", "Name", departmentFilter);
             return View(viewModel);
         }
 
@@ -748,8 +826,8 @@ namespace ContosoUniversity.Controllers
         {
             var instructors = db.Instructors
                 .Include(i => i.OfficeAssignment)
-                .Include(i => i.Courses.Select(c => c.Department))
-                .Include(i => i.Courses.Select(c => c.Enrollments))
+                .Include(i => i.Courses.Select(c => c.Department)) // Include Courses and Departments
+                .Include(i => i.Courses.Select(c => c.Enrollments.Select(e => e.Student))) // Include Courses, Enrollments, and Students
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(searchTerm))
@@ -775,7 +853,8 @@ namespace ContosoUniversity.Controllers
                 .Where(i => i.ID == instructorID)
                 .SelectMany(i => i.Courses)
                 .Include(c => c.Department)
-                .Include(c => c.Enrollments)
+                .Include(c => c.Enrollments.Select(e => e.Student)) // Include Enrollments and Students
+                .Include(c => c.Instructors.Select(i => i.OfficeAssignment)) // Include Instructors and OfficeAssignment
                 .ToList();
         }
 
@@ -785,6 +864,8 @@ namespace ContosoUniversity.Controllers
                 .Where(c => c.CourseID == courseID)
                 .SelectMany(c => c.Enrollments)
                 .Include(e => e.Student)
+                .Include(e => e.Course.Department) // Include Course and Department
+                .Include(e => e.Course.Instructors.Select(i => i.OfficeAssignment)) // Include Course, Instructors, and OfficeAssignment
                 .ToList();
         }
 
@@ -792,7 +873,9 @@ namespace ContosoUniversity.Controllers
         public ActionResult CreateInstructor()
         {
             RequireRole(Person.UserRole.Administrator);
-            ViewBag.Departments = new SelectList(db.Departments, "DepartmentID", "Name");
+            ViewBag.Departments = new SelectList(db.Departments
+                .Include(d => d.Administrator) // Include Administrator
+                .ToList(), "DepartmentID", "Name");
             return View();
         }
 
@@ -811,7 +894,9 @@ namespace ContosoUniversity.Controllers
                 return RedirectToAction("ManageInstructors");
             }
 
-            ViewBag.Departments = new SelectList(db.Departments, "DepartmentID", "Name");
+            ViewBag.Departments = new SelectList(db.Departments
+                .Include(d => d.Administrator) // Include Administrator
+                .ToList(), "DepartmentID", "Name");
             return View(instructor);
         }
 
@@ -826,7 +911,8 @@ namespace ContosoUniversity.Controllers
             }
 
             var instructor = db.Instructors
-                .Include(i => i.Courses)
+                .Include(i => i.Courses.Select(c => c.Department)) // Include Courses and Departments
+                .Include(d => d.Courses.Select(c => c.Instructors.Select(ins => ins.OfficeAssignment)))// Include Courses, Instructors, and OfficeAssignment
                 .FirstOrDefault(i => i.ID == id);
 
             if (instructor == null)
@@ -835,7 +921,11 @@ namespace ContosoUniversity.Controllers
             }
 
             var instructorCourses = new HashSet<int>(instructor.Courses.Select(c => c.CourseID));
-            var allCourses = db.Courses.Include(c => c.Department).ToList();
+            var allCourses = db.Courses
+                .Include(c => c.Department)
+                .Include(c => c.Instructors.Select(i => i.OfficeAssignment)) // Include Instructors and OfficeAssignment
+                .Include(c => c.Enrollments.Select(e => e.Student)) // Include Enrollments and Students
+                .ToList();
 
             var viewModel = new AssignCoursesViewModel
             {
@@ -859,7 +949,7 @@ namespace ContosoUniversity.Controllers
             RequireRole(Person.UserRole.Administrator);
 
             var instructor = db.Instructors
-                .Include(i => i.Courses)
+                .Include(i => i.Courses.Select(c => c.Department)) // Include Courses and Departments
                 .FirstOrDefault(i => i.ID == id);
 
             if (instructor == null)
@@ -885,7 +975,9 @@ namespace ContosoUniversity.Controllers
             var selectedCoursesHS = new HashSet<int>(selectedCourses);
             var instructorCourses = new HashSet<int>(instructor.Courses.Select(c => c.CourseID));
 
-            foreach (var course in db.Courses)
+            foreach (var course in db.Courses
+                .Include(c => c.Instructors) // Include Instructors
+                .Include(c => c.Department)) // Include Department
             {
                 if (selectedCoursesHS.Contains(course.CourseID))
                 {
@@ -911,10 +1003,12 @@ namespace ContosoUniversity.Controllers
             RequireRole(Person.UserRole.Administrator);
 
             var instructor = db.Instructors
-                .Include(i => i.Courses)
+                .Include(i => i.Courses.Select(c => c.Department)) // Include Courses and Departments
                 .FirstOrDefault(i => i.ID == instructorId);
 
-            var course = db.Courses.Find(courseId);
+            var course = db.Courses
+                .Include(c => c.Instructors) // Include Instructors
+                .FirstOrDefault(c => c.CourseID == courseId);
 
             if (instructor != null && course != null)
             {
@@ -933,7 +1027,10 @@ namespace ContosoUniversity.Controllers
         {
             var alerts = new List<SystemAlert>();
 
-            var lowEnrollmentCourses = db.Courses.Where(c => c.Enrollments.Count < 5).ToList();
+            var lowEnrollmentCourses = db.Courses
+                .Include(c => c.Department) // Include Department
+                .Include(c => c.Instructors) // Include Instructors
+                .Where(c => c.Enrollments.Count < 5).ToList();
             if (lowEnrollmentCourses.Any())
             {
                 alerts.Add(new SystemAlert
@@ -947,7 +1044,9 @@ namespace ContosoUniversity.Controllers
             }
 
             // Updated to check for AdministratorID instead of InstructorID
-            var departmentsWithoutHeads = db.Departments.Where(d => d.AdministratorID == null).ToList();
+            var departmentsWithoutHeads = db.Departments
+                .Include(d => d.Administrator) // Include Administrator
+                .Where(d => d.AdministratorID == null).ToList();
             if (departmentsWithoutHeads.Any())
             {
                 alerts.Add(new SystemAlert
@@ -960,7 +1059,10 @@ namespace ContosoUniversity.Controllers
                 });
             }
 
-            var instructorsWithoutCourses = db.Instructors.Where(i => i.Courses.Count == 0).ToList();
+            var instructorsWithoutCourses = db.Instructors
+                .Include(i => i.OfficeAssignment) // Include OfficeAssignment
+                .Include(i => i.Courses) // Include Courses
+                .Where(i => i.Courses.Count == 0).ToList();
             if (instructorsWithoutCourses.Any())
             {
                 alerts.Add(new SystemAlert
@@ -974,6 +1076,8 @@ namespace ContosoUniversity.Controllers
             }
 
             var overloadedInstructors = db.Instructors
+                .Include(i => i.OfficeAssignment) // Include OfficeAssignment
+                .Include(i => i.Courses.Select(c => c.Enrollments)) // Include Courses and Enrollments
                 .Where(i => i.Courses.Sum(c => c.Enrollments.Count) > 100)
                 .ToList();
             if (overloadedInstructors.Any())
@@ -1002,7 +1106,9 @@ namespace ContosoUniversity.Controllers
             var selectedInstructorsHS = new HashSet<int>(selectedInstructors);
             var courseInstructors = new HashSet<int>(courseToUpdate.Instructors.Select(i => i.ID));
 
-            foreach (var instructor in db.Instructors)
+            foreach (var instructor in db.Instructors
+                .Include(i => i.OfficeAssignment) // Include OfficeAssignment
+                .Include(i => i.Courses)) // Include Courses
             {
                 if (selectedInstructorsHS.Contains(instructor.ID))
                 {

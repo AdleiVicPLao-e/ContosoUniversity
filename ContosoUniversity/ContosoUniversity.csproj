@@ -248,7 +248,7 @@
     <Content Include="Views\Account\Login.cshtml" />
     <None Include="Views\Administrator\DeleteCourse.cshtml" />
     <Content Include="Views\Administrator\ManageCourses.cshtml" />
-    <Content Include="Views\Administrator\EditCourses.cshtml" />
+    <Content Include="Views\Administrator\EditCourse.cshtml" />
     <Content Include="Views\Administrator\CourseDetails.cshtml" />
     <Content Include="Views\Administrator\ManageDepartments.cshtml" />
     <Content Include="Views\Administrator\EditDepartment.cshtml" />
@@ -320,7 +320,7 @@
     <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Views\Instructor\Dashboard.cshtml" />
     <Content Include="Views\Administrator\ManageInstructor.cshtml" />
-    <Content Include="Views\Administrator\ManageStudent.cshtml" />
+    <Content Include="Views\Administrator\ManageStudents.cshtml" />
     <Content Include="Views\Administrator\StudentDetails.cshtml" />
   </ItemGroup>
   <ItemGroup>
