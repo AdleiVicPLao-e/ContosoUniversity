@@ -5,61 +5,105 @@
     ViewBag.Title = "Manage Students";
 }
 
-<h2>Manage Students</h2>
+<h2 class="mb-4">Manage Students</h2>
 
 @using (Html.BeginForm("ManageStudents", "Administrator", FormMethod.Get))
 {
-    <div class="form-inline mb-3">
-        <div class="form-group">
+    <div class="row g-2 align-items-center mb-4">
+        <div class="col-md-4">
             @Html.TextBox("searchString", ViewBag.CurrentFilter as string, new { @class = "form-control", placeholder = "Search by name..." })
         </div>
-        <input type="submit" value="Search" class="btn btn-default" />
-        @Html.ActionLink("Create New Student", "CreateStudent", "Administrator", null, new { @class = "btn btn-primary" })
+        <div class="col-auto">
+            <button type="submit" class="btn btn-outline-secondary">Search</button>
+        </div>
+        <div class="col-auto">
+            @Html.ActionLink("Create New Student", "CreateStudent", "Administrator", null, new { @class = "btn btn-primary" })
+        </div>
     </div>
 }
 
-<div class="panel panel-default">
-    <div class="panel-heading">
-        <h3 class="panel-title">Students</h3>
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">Students</h5>
     </div>
-    <div class="panel-body">
-        <table class="table table-striped">
-            <tr>
-                <th>
-                    @Html.ActionLink("Last Name", "ManageStudents", new { sortOrder = ViewBag.NameSortParm, currentFilter = ViewBag.CurrentFilter })
-                </th>
-                <th>First Name</th>
-                <th>Username</th>
-                <th>
-                    @Html.ActionLink("Enrollment Date", "ManageStudents", new { sortOrder = ViewBag.DateSortParm, currentFilter = ViewBag.CurrentFilter })
-                </th>
-                <th>Courses</th>
-                <th>Actions</th>
-            </tr>
-
-            @foreach (var item in Model)
-            {
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
                 <tr>
-                    <td>@item.LastName</td>
-                    <td>@item.FirstMidName</td>
-                    <td>@item.UserName</td>
-                    <td>@item.EnrollmentDate.ToString("yyyy-MM-dd")</td>
-                    <td>@(item.Enrollments?.Count ?? 0)</td>
-                    <td>
-                        @Html.ActionLink("Details", "StudentDetails", "Administrator", new { id = item.ID }, new { @class = "btn btn-xs btn-info" })
-                        @Html.ActionLink("Edit", "EditStudent", "Administrator", new { id = item.ID }, new { @class = "btn btn-xs btn-primary" })
-                        @Html.ActionLink("Delete", "DeleteStudent", "Administrator", new { id = item.ID }, new { @class = "btn btn-xs btn-danger" })
-                    </td>
+                    <th>
+                        @Html.ActionLink("Last Name", "ManageStudents", new { sortOrder = ViewBag.NameSortParm, currentFilter = ViewBag.CurrentFilter }, new { @class = "text-decoration-none" })
+                    </th>
+                    <th>First Name</th>
+                    <th>Username</th>
+                    <th>
+                        @Html.ActionLink("Enrollment Date", "ManageStudents", new { sortOrder = ViewBag.DateSortParm, currentFilter = ViewBag.CurrentFilter }, new { @class = "text-decoration-none" })
+                    </th>
+                    <th>Courses</th>
+                    <th class="text-center">Actions</th>
                 </tr>
-            }
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.LastName</td>
+                        <td>@item.FirstMidName</td>
+                        <td>@item.UserName</td>
+                        <td>@item.EnrollmentDate.ToString("yyyy-MM-dd")</td>
+                        <td>@(item.Enrollments?.Count ?? 0)</td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm" role="group">
+                                @Html.ActionLink("Details", "StudentDetails", "Administrator", new { id = item.ID }, new { @class = "btn btn-info" })
+                                @Html.ActionLink("Edit", "EditStudent", "Administrator", new { id = item.ID }, new { @class = "btn btn-warning text-white" })
+                                @Html.ActionLink("Delete", "DeleteStudent", "Administrator", new { id = item.ID }, new { @class = "btn btn-danger" })
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
         </table>
     </div>
 </div>
 
-Page @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) of @Model.PageCount
-@Html.PagedListPager(Model, page => Url.Action("ManageStudents",
-    new { page, sortOrder = ViewBag.CurrentSort, currentFilter = ViewBag.CurrentFilter }))
-
-<div class="well">
-    @Html.ActionLink("Back to Dashboard", "Dashboard", "Administrator", null, new { @class = "btn btn-default" })
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <strong>Page @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber)</strong> of <strong>@Model.PageCount</strong>
+    </div>
+    <div>
+        @Html.PagedListPager(Model, page => Url.Action("ManageStudents",
+            new { page, sortOrder = ViewBag.CurrentSort, currentFilter = ViewBag.CurrentFilter }),
+            new PagedListRenderOptions
+            {
+                UlElementClasses = new[] { "pagination", "mb-0", "justify-content-end" },
+                LiElementClasses = new[] { "page-item" },
+                // don't use PageClasses here — not available in this package/version
+            })
+    </div>
 </div>
+
+<div class="card p-3 bg-light">
+    @Html.ActionLink("Back to Dashboard", "Dashboard", "Administrator", null, new { @class = "btn btn-secondary" })
+</div>
+
+@section Scripts {
+    <script>
+        // Ensure the rendered <ul>/<li>/<a> match Bootstrap 5 expectations.
+        // This adds 'page-link' to anchors inside the pager and reinforces page-item on li.
+        (function () {
+            var pagers = document.querySelectorAll('.pagination');
+            pagers.forEach(function (ul) {
+                ul.querySelectorAll('li').forEach(function (li) {
+                    li.classList.add('page-item');
+                    var a = li.querySelector('a');
+                    if (a) {
+                        a.classList.add('page-link');
+                    } else {
+                        // for disabled/current page that may render a <span>
+                        var span = li.querySelector('span');
+                        if (span) span.classList.add('page-link');
+                    }
+                });
+            });
+        })();
+    </script>
+}

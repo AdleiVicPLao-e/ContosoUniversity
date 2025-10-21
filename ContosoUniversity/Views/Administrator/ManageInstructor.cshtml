@@ -4,65 +4,62 @@
     ViewBag.Title = "Manage Instructors";
 }
 
-<h2>Instructors</h2>
+<h2 class="mb-4"><i class="bi bi-person-badge me-2"></i>Manage Instructors</h2>
 
 <p>
-    @Html.ActionLink("Create New Instructor", "CreateInstructor", "Administrator", null, new { @class = "btn btn-primary" })
+    @Html.ActionLink("Create New Instructor", "CreateInstructor", "Administrator", null, new { @class = "btn btn-primary mb-3" })
 </p>
 
 @if (Model.Instructors != null && Model.Instructors.Any())
 {
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h3 class="panel-title">All Instructors</h3>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">All Instructors</h5>
         </div>
-        <div class="panel-body">
-            <table class="table table-striped">
-                <tr>
-                    <th>Name</th>
-                    <th>Hire Date</th>
-                    <th>Office</th>
-                    <th>Courses</th>
-                    <th>Total Students</th>
-                    <th>Actions</th>
-                </tr>
-
-                @foreach (var instructor in Model.Instructors)
-                {
-                    string selectedRow = Model.SelectedInstructorID == instructor.ID ? "info" : "";
-                    <tr class="@selectedRow">
-                        <td>
-                            @instructor.FullName
-                        </td>
-                        <td>
-                            @instructor.HireDate.ToString("yyyy-MM-dd")
-                        </td>
-                        <td>
-                            @(instructor.OfficeAssignment?.Location ?? "No Office")
-                        </td>
-                        <td>
-                            @if (instructor.Courses != null)
-                            {
-                                foreach (var course in instructor.Courses.Take(3))
-                                {
-                                    <span class="label label-default">@course.Title</span><br />
-                                }
-                                if (instructor.Courses.Count > 3)
-                                {
-                                    <small>+@(instructor.Courses.Count - 3) more</small>
-                                }
-                            }
-                        </td>
-                        <td>
-                            @(instructor.Courses?.Sum(c => c.Enrollments.Count) ?? 0)
-                        </td>
-                        <td>
-                            @Html.ActionLink("Select", "ManageInstructors", new { instructorID = instructor.ID }, new { @class = "btn btn-xs btn-default" })
-                            @Html.ActionLink("Edit", "EditInstructor", new { id = instructor.ID }, new { @class = "btn btn-xs btn-primary" })
-                            @Html.ActionLink("Assign Courses", "AssignCoursesToInstructor", new { id = instructor.ID }, new { @class = "btn btn-xs btn-info" })
-                        </td>
+        <div class="card-body">
+            <table class="table table-striped table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Name</th>
+                        <th>Hire Date</th>
+                        <th>Office</th>
+                        <th>Courses</th>
+                        <th>Total Students</th>
+                        <th>Actions</th>
                     </tr>
-                }
+                </thead>
+                <tbody>
+                    @foreach (var instructor in Model.Instructors)
+                    {
+                        string selectedRow = Model.SelectedInstructorID == instructor.ID ? "table-info" : "";
+                        <tr class="@selectedRow">
+                            <td>@instructor.FullName</td>
+                            <td>@instructor.HireDate.ToString("yyyy-MM-dd")</td>
+                            <td>@(instructor.OfficeAssignment?.Location ?? "No Office")</td>
+                            <td>
+                                @if (instructor.Courses != null && instructor.Courses.Any())
+                                {
+                                    foreach (var course in instructor.Courses.Take(3))
+                                    {
+                                        <span class="badge bg-secondary">@course.Title</span>
+                                    }
+                                    if (instructor.Courses.Count > 3)
+                                    {
+                                        <span class="text-muted ms-1">+@(instructor.Courses.Count - 3) more</span>
+                                    }
+                                }
+                            </td>
+                            <td>@(instructor.Courses?.Sum(c => c.Enrollments.Count) ?? 0)</td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    @Html.ActionLink("Select", "ManageInstructors", new { instructorID = instructor.ID }, new { @class = "btn btn-outline-secondary" })
+                                    @Html.ActionLink("Edit", "EditInstructor", new { id = instructor.ID }, new { @class = "btn btn-outline-primary" })
+                                    @Html.ActionLink("Assign", "AssignCoursesToInstructor", new { id = instructor.ID }, new { @class = "btn btn-outline-info" })
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
             </table>
         </div>
     </div>
@@ -70,47 +67,50 @@
 
 @if (Model.Courses != null && Model.SelectedInstructorID.HasValue)
 {
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h3 class="panel-title">
-                Courses Taught by Selected Instructor
-                @Html.ActionLink("Assign More Courses", "AssignCoursesToInstructor", new { id = Model.SelectedInstructorID }, new { @class = "btn btn-xs btn-primary pull-right" })
-            </h3>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Courses Taught by Selected Instructor</h5>
+            @Html.ActionLink("Assign More Courses", "AssignCoursesToInstructor", new { id = Model.SelectedInstructorID }, new { @class = "btn btn-sm btn-light" })
         </div>
-        <div class="panel-body">
-            <table class="table">
-                <tr>
-                    <th>Course ID</th>
-                    <th>Title</th>
-                    <th>Department</th>
-                    <th>Enrolled Students</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-
-                @foreach (var course in Model.Courses)
-                {
-                    string selectedRow = Model.SelectedCourseID == course.CourseID ? "info" : "";
-                    <tr class="@selectedRow">
-                        <td>@course.CourseID</td>
-                        <td>@course.Title</td>
-                        <td>@course.Department.Name</td>
-                        <td>@course.Enrollments.Count / @course.Capacity</td>
-                        <td>
-                            <span class="label label-@(course.IsActive ? "success" : "default")">
-                                @(course.IsActive ? "Active" : "Inactive")
-                            </span>
-                        </td>
-                        <td>
-                            @Html.ActionLink("Select", "ManageInstructors", new { instructorID = Model.SelectedInstructorID, courseID = course.CourseID }, new { @class = "btn btn-xs btn-default" })
-                            @using (Html.BeginForm("RemoveCourseFromInstructor", "Administrator", new { instructorId = Model.SelectedInstructorID, courseId = course.CourseID }, FormMethod.Post, new { style = "display:inline" }))
-                            {
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-xs btn-danger" onclick="return confirm('Remove this course from instructor?')">Remove</button>
-                            }
-                        </td>
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Course ID</th>
+                        <th>Title</th>
+                        <th>Department</th>
+                        <th>Enrolled Students</th>
+                        <th>Status</th>
+                        <th>Actions</th>
                     </tr>
-                }
+                </thead>
+                <tbody>
+                    @foreach (var course in Model.Courses)
+                    {
+                        string selectedRow = Model.SelectedCourseID == course.CourseID ? "table-info" : "";
+                        <tr class="@selectedRow">
+                            <td>@course.CourseID</td>
+                            <td>@course.Title</td>
+                            <td>@course.Department.Name</td>
+                            <td>@course.Enrollments.Count / @course.Capacity</td>
+                            <td>
+                                <span class="badge bg-@(course.IsActive ? "success" : "secondary")">
+                                    @(course.IsActive ? "Active" : "Inactive")
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    @Html.ActionLink("Select", "ManageInstructors", new { instructorID = Model.SelectedInstructorID, courseID = course.CourseID }, new { @class = "btn btn-outline-secondary" })
+                                    @using (Html.BeginForm("RemoveCourseFromInstructor", "Administrator", new { instructorId = Model.SelectedInstructorID, courseId = course.CourseID }, FormMethod.Post, new { style = "display:inline" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Remove this course from instructor?')">Remove</button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
             </table>
         </div>
     </div>
@@ -118,48 +118,45 @@
 
 @if (Model.Enrollments != null && Model.SelectedCourseID.HasValue)
 {
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h3 class="panel-title">
-                Students Enrolled in Selected Course
-            </h3>
+    <div class="card shadow-sm">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Students Enrolled in Selected Course</h5>
         </div>
-        <div class="panel-body">
-            <table class="table">
-                <tr>
-                    <th>Student Name</th>
-                    <th>Enrollment Date</th>
-                    <th>Grade</th>
-                    <th>Status</th>
-                </tr>
-                @foreach (var enrollment in Model.Enrollments)
-                {
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead class="table-light">
                     <tr>
-                        <td>@enrollment.Student.FullName</td>
-                        <td>@enrollment.Student.EnrollmentDate.ToString("yyyy-MM-dd")</td>
-                        <td>
-                            @if (enrollment.Grade.HasValue)
-                            {
-                                <span class="label label-success">@enrollment.Grade</span>
-                            }
-                            else
-                            {
-                                <span class="label label-warning">No Grade</span>
-                            }
-                        </td>
-                        <td>
-                            <span class="label label-@(enrollment.Grade.HasValue ? "success" : "info")">
-                                @(enrollment.Grade.HasValue ? "Graded" : "Pending")
-                            </span>
-                        </td>
+                        <th>Student Name</th>
+                        <th>Enrollment Date</th>
+                        <th>Grade</th>
+                        <th>Status</th>
                     </tr>
-                }
+                </thead>
+                <tbody>
+                    @foreach (var enrollment in Model.Enrollments)
+                    {
+                        <tr>
+                            <td>@enrollment.Student.FullName</td>
+                            <td>@enrollment.Student.EnrollmentDate.ToString("yyyy-MM-dd")</td>
+                            <td>
+                                <span class="badge bg-@(enrollment.Grade.HasValue ? "success" : "warning")">
+                                    @(enrollment.Grade.HasValue ? enrollment.Grade.ToString() : "No Grade")
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-@(enrollment.Grade.HasValue ? "success" : "info")">
+                                    @(enrollment.Grade.HasValue ? "Graded" : "Pending")
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
             </table>
         </div>
     </div>
 }
 
-<div class="well">
-    @Html.ActionLink("Back to Dashboard", "Dashboard", "Administrator", null, new { @class = "btn btn-default" })
-    @Html.ActionLink("Manage Courses", "ManageCourses", "Administrator", null, new { @class = "btn btn-default" })
+<div class="mt-4 d-flex flex-wrap gap-2">
+    @Html.ActionLink("Back to Dashboard", "Dashboard", "Administrator", null, new { @class = "btn btn-secondary" })
+    @Html.ActionLink("Manage Courses", "ManageCourses", "Administrator", null, new { @class = "btn btn-outline-primary" })
 </div>

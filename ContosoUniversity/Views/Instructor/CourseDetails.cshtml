@@ -4,98 +4,87 @@
     ViewBag.Title = "Course Details - " + Model.Title;
 }
 
-<h2>@Model.Title</h2>
+<div class="container mt-4">
+    <h2 class="mb-4">@Model.Title</h2>
 
-<div class="row">
-    <div class="col-md-6">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">Course Information</h3>
-            </div>
-            <div class="panel-body">
-                <dl class="dl-horizontal">
-                    <dt>Course ID:</dt>
-                    <dd>@Model.CourseID</dd>
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light fw-bold">Course Information</div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Course ID:</dt>
+                        <dd class="col-sm-8">@Model.CourseID</dd>
+                        <dt class="col-sm-4">Title:</dt>
+                        <dd class="col-sm-8">@Model.Title</dd>
+                        <dt class="col-sm-4">Department:</dt>
+                        <dd class="col-sm-8">@Model.Department.Name</dd>
+                        <dt class="col-sm-4">Credits:</dt>
+                        <dd class="col-sm-8">@Model.Credits</dd>
+                        <dt class="col-sm-4">Capacity:</dt>
+                        <dd class="col-sm-8">@Model.Capacity students</dd>
+                        <dt class="col-sm-4">Enrolled:</dt>
+                        <dd class="col-sm-8">@Model.EnrolledStudents students</dd>
+                        <dt class="col-sm-4">Available Spots:</dt>
+                        <dd class="col-sm-8">@Model.AvailableSpots</dd>
+                        <dt class="col-sm-4">Status:</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-@(Model.IsActive ? "success" : "secondary")">
+                                @(Model.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </dd>
+                        <dt class="col-sm-4">Fill Rate:</dt>
+                        <dd class="col-sm-8">@Model.FillRate.ToString("P0")</dd>
+                    </dl>
 
-                    <dt>Title:</dt>
-                    <dd>@Model.Title</dd>
-
-                    <dt>Department:</dt>
-                    <dd>@Model.Department.Name</dd>
-
-                    <dt>Credits:</dt>
-                    <dd>@Model.Credits</dd>
-
-                    <dt>Capacity:</dt>
-                    <dd>@Model.Capacity students</dd>
-
-                    <dt>Enrolled:</dt>
-                    <dd>@Model.EnrolledStudents students</dd>
-
-                    <dt>Available Spots:</dt>
-                    <dd>@Model.AvailableSpots</dd>
-
-                    <dt>Status:</dt>
-                    <dd>
-                        <span class="label label-@(Model.IsActive ? "success" : "default")">
-                            @(Model.IsActive ? "Active" : "Inactive")
-                        </span>
-                    </dd>
-
-                    <dt>Fill Rate:</dt>
-                    <dd>@Model.FillRate.ToString("P0")</dd>
-                </dl>
-
-                @if (!string.IsNullOrEmpty(Model.Description))
-                {
-                    <dt>Description:</dt>
-                    <dd>@Model.Description</dd>
-                }
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-6">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">Teaching Team</h3>
-            </div>
-            <div class="panel-body">
-                @if (Model.Instructors.Any())
-                {
-                    <ul class="list-group">
-                        @foreach (var instructor in Model.Instructors)
-                        {
-                            <li class="list-group-item">
-                                <strong>@instructor.FullName</strong>
-                                @if (!string.IsNullOrEmpty(instructor.Specialization))
-                                {
-                                    <br /><small class="text-muted">@instructor.Specialization</small>
-                                }
-                                @if (instructor.OfficeAssignment != null)
-                                {
-                                    <br /><small class="text-muted">Office: @instructor.OfficeAssignment.Location</small>
-                                }
-                            </li>
-                        }
-                    </ul>
-                }
-                else
-                {
-                    <p class="text-muted">No instructors assigned to this course.</p>
-                }
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <hr />
+                        <h6>Description:</h6>
+                        <p class="text-muted">@Model.Description</p>
+                    }
+                </div>
             </div>
         </div>
 
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">Quick Actions</h3>
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light fw-bold">Teaching Team</div>
+                <div class="card-body">
+                    @if (Model.Instructors.Any())
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var instructor in Model.Instructors)
+                            {
+                                <li class="list-group-item">
+                                    <strong>@instructor.FullName</strong>
+                                    @if (!string.IsNullOrEmpty(instructor.Specialization))
+                                    {
+                                        <br /><small class="text-muted">@instructor.Specialization</small>
+                                    }
+                                    @if (instructor.OfficeAssignment != null)
+                                    {
+                                        <br /><small class="text-muted">Office: @instructor.OfficeAssignment.Location</small>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">No instructors assigned.</p>
+                    }
+                </div>
             </div>
-            <div class="panel-body">
-                <div class="btn-group-vertical" style="width: 100%;">
-                    @Html.ActionLink("View Students", "CourseStudents", new { id = Model.CourseID }, new { @class = "btn btn-primary btn-block text-left" })
-                    @Html.ActionLink("Back to My Courses", "MyCourses", null, new { @class = "btn btn-default btn-block text-left" })
-                    @Html.ActionLink("Back to Dashboard", "Dashboard", null, new { @class = "btn btn-default btn-block text-left" })
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-light fw-bold">Quick Actions</div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        @Html.ActionLink("View Students", "CourseStudents", new { id = Model.CourseID }, new { @class = "btn btn-primary" })
+                        @Html.ActionLink("Back to My Courses", "MyCourses", null, new { @class = "btn btn-outline-secondary" })
+                        @Html.ActionLink("Back to Dashboard", "Dashboard", null, new { @class = "btn btn-outline-secondary" })
+                    </div>
                 </div>
             </div>
         </div>

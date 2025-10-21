@@ -2,161 +2,71 @@
     ViewBag.Title = "Contact Us";
 }
 
-<div class="jumbotron">
-    <h1>Contact Contoso University</h1>
-    <p class="lead">We're here to help you with any questions or concerns</p>
-</div>
-
-<div class="row">
-    <div class="col-md-8">
-        <h2>Send Us a Message</h2>
-
-        @using (Html.BeginForm("Contact", "Home", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
-        {
-            @Html.AntiForgeryToken()
-
-            <div class="form-group">
-                <label class="control-label col-md-2" for="Name">Your Name</label>
-                <div class="col-md-10">
-                    <input type="text" class="form-control" id="Name" name="Name" required>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label class="control-label col-md-2" for="Email">Email Address</label>
-                <div class="col-md-10">
-                    <input type="email" class="form-control" id="Email" name="Email" required>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label class="control-label col-md-2" for="Subject">Subject</label>
-                <div class="col-md-10">
-                    <select class="form-control" id="Subject" name="Subject" required>
-                        <option value="">Select a subject...</option>
-                        <option value="Admissions">Admissions Inquiry</option>
-                        <option value="Financial Aid">Financial Aid</option>
-                        <option value="Academic Programs">Academic Programs</option>
-                        <option value="Student Services">Student Services</option>
-                        <option value="Technical Support">Technical Support</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label class="control-label col-md-2" for="Message">Message</label>
-                <div class="col-md-10">
-                    <textarea class="form-control" id="Message" name="Message" rows="6" required></textarea>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <div class="col-md-offset-2 col-md-10">
-                    <button type="submit" class="btn btn-primary">Send Message</button>
-                    <button type="reset" class="btn btn-default">Clear Form</button>
-                </div>
-            </div>
-        }
-
-        @if (ViewBag.Message != null)
-        {
-            <div class="alert alert-success">
-                @ViewBag.Message
-            </div>
-        }
+<div class="container">
+    <div class="page-header text-center">
+        <h1>Contact Contoso University</h1>
+        <p class="lead">We're here to help you with any questions or concerns</p>
     </div>
 
-    <div class="col-md-4">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">Contact Information</h3>
-            </div>
-            <div class="panel-body">
-                <address>
-                    <strong>Contoso University</strong><br>
-                    123 University Avenue<br>
-                    Seattle, WA 98101<br>
-                    <abbr title="Phone">P:</abbr> (206) 555-1234
-                </address>
+    <div class="row">
+        <!-- Contact Form -->
+        <div class="col-md-8 mb-4">
+            <div class="card shadow-sm p-4">
+                @using (Html.BeginForm("Contact", "Home", FormMethod.Post, new { @class = "form-horizontal" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="form-group">
+                        @Html.Label("Name", "Your Name", new { @class = "control-label" })
+                        @Html.TextBox("Name", "", new { @class = "form-control", required = "required" })
+                    </div>
 
-                <address>
-                    <strong>General Inquiries</strong><br>
-                    <a href="mailto:info@contoso.edu">info@contoso.edu</a>
-                </address>
+                    <div class="form-group">
+                        @Html.Label("Email", "Email Address", new { @class = "control-label" })
+                        @Html.TextBox("Email", "", new { @class = "form-control", type = "email", required = "required" })
+                    </div>
 
-                <address>
-                    <strong>Admissions Office</strong><br>
-                    <a href="mailto:admissions@contoso.edu">admissions@contoso.edu</a><br>
-                    <abbr title="Phone">P:</abbr> (206) 555-5678
-                </address>
+                    <div class="form-group">
+                        @Html.Label("Subject", "Subject", new { @class = "control-label" })
+                        <select class="form-control" name="Subject" required>
+                            <option value="">Select a subject...</option>
+                            <option value="Admissions">Admissions Inquiry</option>
+                            <option value="Financial Aid">Financial Aid</option>
+                            <option value="Academic Programs">Academic Programs</option>
+                            <option value="Student Services">Student Services</option>
+                            <option value="Technical Support">Technical Support</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
 
-                <address>
-                    <strong>Technical Support</strong><br>
-                    <a href="mailto:support@contoso.edu">support@contoso.edu</a><br>
-                    <abbr title="Phone">P:</abbr> (206) 555-9012
-                </address>
-            </div>
-        </div>
+                    <div class="form-group">
+                        @Html.Label("Message", "Message", new { @class = "control-label" })
+                        <textarea class="form-control" name="Message" rows="6" required></textarea>
+                    </div>
 
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">Office Hours</h3>
-            </div>
-            <div class="panel-body">
-                <dl class="dl-horizontal">
-                    <dt>Monday - Friday:</dt>
-                    <dd>8:00 AM - 6:00 PM</dd>
-
-                    <dt>Saturday:</dt>
-                    <dd>9:00 AM - 1:00 PM</dd>
-
-                    <dt>Sunday:</dt>
-                    <dd>Closed</dd>
-                </dl>
-
-                <p class="text-muted">
-                    <small>Hours may vary during holidays and semester breaks</small>
-                </p>
+                    <button type="submit" class="btn btn-primary btn-lg">Send Message</button>
+                }
             </div>
         </div>
 
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">Emergency Contacts</h3>
+        <!-- Contact Info Sidebar -->
+        <div class="col-md-4">
+            <div class="card shadow-sm p-3 mb-3">
+                <h4>Contact Information</h4>
+                <p><span class="glyphicon glyphicon-map-marker"></span> 123 University Avenue, Seattle, WA 98101</p>
+                <p><span class="glyphicon glyphicon-phone"></span> (206) 555-1234</p>
+                <p><span class="glyphicon glyphicon-envelope"></span> <a href="mailto:info@contoso.edu">info@contoso.edu</a></p>
             </div>
-            <div class="panel-body">
-                <p>
-                    <strong>Campus Security:</strong> (206) 555-9999<br>
-                    <strong>Health Services:</strong> (206) 555-8888<br>
-                    <strong>Counseling Center:</strong> (206) 555-7777
-                </p>
+            <div class="card shadow-sm p-3 mb-3">
+                <h4>Office Hours</h4>
+                <p>Mon-Fri: 8:00 AM - 6:00 PM</p>
+                <p>Sat: 9:00 AM - 1:00 PM</p>
+                <p>Sun: Closed</p>
             </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-12">
-        <div class="well">
-            <h3>Visit Our Campus</h3>
-            <div class="row">
-                <div class="col-md-6">
-                    <h4>Main Campus</h4>
-                    <p>
-                        123 University Avenue<br>
-                        Seattle, WA 98101<br>
-                        <a href="https://maps.google.com" target="_blank">Get Directions →</a>
-                    </p>
-                </div>
-                <div class="col-md-6">
-                    <h4>Parking Information</h4>
-                    <p>
-                        Visitor parking available in Lots A and B.<br>
-                        Daily parking passes: $8<br>
-                        <a href="#parking">View parking map →</a>
-                    </p>
-                </div>
+            <div class="card shadow-sm p-3">
+                <h4>Emergency Contacts</h4>
+                <p>Campus Security: (206) 555-9999</p>
+                <p>Health Services: (206) 555-8888</p>
+                <p>Counseling Center: (206) 555-7777</p>
             </div>
         </div>
     </div>

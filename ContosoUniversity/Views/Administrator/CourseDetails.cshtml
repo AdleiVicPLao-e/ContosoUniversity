@@ -8,42 +8,42 @@
 
 <div class="row">
     <div class="col-md-6">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">Course Information</h3>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Course Information</h3>
             </div>
-            <div class="panel-body">
-                <dl class="dl-horizontal">
-                    <dt>Course ID:</dt>
-                    <dd>@Model.CourseID</dd>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Course ID:</dt>
+                    <dd class="col-sm-8">@Model.CourseID</dd>
 
-                    <dt>Title:</dt>
-                    <dd>@Model.Title</dd>
+                    <dt class="col-sm-4">Title:</dt>
+                    <dd class="col-sm-8">@Model.Title</dd>
 
-                    <dt>Description:</dt>
-                    <dd>@(string.IsNullOrEmpty(Model.Description) ? "No description" : Model.Description)</dd>
+                    <dt class="col-sm-4">Description:</dt>
+                    <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Description) ? "No description" : Model.Description)</dd>
 
-                    <dt>Credits:</dt>
-                    <dd>@Model.Credits</dd>
+                    <dt class="col-sm-4">Credits:</dt>
+                    <dd class="col-sm-8">@Model.Credits</dd>
 
-                    <dt>Capacity:</dt>
-                    <dd>@Model.Capacity students</dd>
+                    <dt class="col-sm-4">Capacity:</dt>
+                    <dd class="col-sm-8">@Model.Capacity students</dd>
 
-                    <dt>Enrolled:</dt>
-                    <dd>@Model.EnrolledStudents students</dd>
+                    <dt class="col-sm-4">Enrolled:</dt>
+                    <dd class="col-sm-8">@Model.EnrolledStudents students</dd>
 
-                    <dt>Available Spots:</dt>
-                    <dd>@Model.AvailableSpots</dd>
+                    <dt class="col-sm-4">Available Spots:</dt>
+                    <dd class="col-sm-8">@Model.AvailableSpots</dd>
 
-                    <dt>Fill Rate:</dt>
-                    <dd>@Model.FillRate.ToString("P0")</dd>
+                    <dt class="col-sm-4">Fill Rate:</dt>
+                    <dd class="col-sm-8">@Model.FillRate.ToString("P0")</dd>
 
-                    <dt>Department:</dt>
-                    <dd>@Model.Department.Name</dd>
+                    <dt class="col-sm-4">Department:</dt>
+                    <dd class="col-sm-8">@Model.Department.Name</dd>
 
-                    <dt>Status:</dt>
-                    <dd>
-                        <span class="label label-@(Model.IsActive ? "success" : "default")">
+                    <dt class="col-sm-4">Status:</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-@(Model.IsActive ? "success" : "secondary")">
                             @(Model.IsActive ? "Active" : "Inactive")
                         </span>
                     </dd>
@@ -53,11 +53,11 @@
     </div>
 
     <div class="col-md-6">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">Teaching Team</h3>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Teaching Team</h3>
             </div>
-            <div class="panel-body">
+            <div class="card-body">
                 @if (Model.Instructors.Any())
                 {
                     <ul class="list-group">
@@ -84,28 +84,30 @@
             </div>
         </div>
 
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">Enrollment Statistics</h3>
+        <div class="card mt-3">
+            <div class="card-header">
+                <h3 class="card-title">Enrollment Statistics</h3>
             </div>
-            <div class="panel-body">
-                <dl class="dl-horizontal">
-                    <dt>Total Enrollments:</dt>
-                    <dd>@Model.Enrollments.Count</dd>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-6">Total Enrollments:</dt>
+                    <dd class="col-sm-6">@Model.Enrollments.Count</dd>
 
-                    <dt>Graded Students:</dt>
-                    <dd>@Model.Enrollments.Count(e => e.Grade.HasValue)</dd>
+                    <dt class="col-sm-6">Graded Students:</dt>
+                    <dd class="col-sm-6">@Model.Enrollments.Count(e => e.Grade.HasValue)</dd>
 
-                    <dt>Ungraded Students:</dt>
-                    <dd>@Model.Enrollments.Count(e => !e.Grade.HasValue)</dd>
+                    <dt class="col-sm-6">Ungraded Students:</dt>
+                    <dd class="col-sm-6">@Model.Enrollments.Count(e => !e.Grade.HasValue)</dd>
                 </dl>
             </div>
         </div>
     </div>
 </div>
 
-<div class="well">
-    @Html.ActionLink("Edit", "EditCourse", "Administrator", new { id = Model.CourseID }, new { @class = "btn btn-primary" })
-    @Html.ActionLink("Back to Course List", "ManageCourses", "Administrator", null, new { @class = "btn btn-default" })
-    @Html.ActionLink("Back to Dashboard", "Dashboard", "Administrator", null, new { @class = "btn btn-default" })
+<div class="card mt-3">
+    <div class="card-body">
+        @Html.ActionLink("Edit", "EditCourse", "Administrator", new { id = Model.CourseID }, new { @class = "btn btn-primary" })
+        @Html.ActionLink("Back to Course List", "ManageCourses", "Administrator", null, new { @class = "btn btn-outline-secondary" })
+        @Html.ActionLink("Back to Dashboard", "Dashboard", "Administrator", null, new { @class = "btn btn-outline-secondary" })
+    </div>
 </div>

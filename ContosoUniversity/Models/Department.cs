@@ -1,8 +1,8 @@
-﻿using System;
+﻿using ContosoUniversity.Models;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-
 namespace ContosoUniversity.Models
 {
     public class Department
@@ -21,11 +21,15 @@ namespace ContosoUniversity.Models
         [Display(Name = "Start Date")]
         public DateTime StartDate { get; set; }
 
-        public int? InstructorID { get; set; }
-
         [Timestamp]
         public byte[] RowVersion { get; set; }
-        public virtual Instructor Administrator { get; set; }
+
+        // Changed to AdministratorID
+        public int? AdministratorID { get; set; }
+
+        [ForeignKey("AdministratorID")]
+        public virtual Administrator Administrator { get; set; }
+
         public virtual ICollection<Course> Courses { get; set; }
     }
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Data.Entity;
 using ContosoUniversity.Models;
 using static ContosoUniversity.Models.Person;
+using DotNetEnv;
 
 namespace ContosoUniversity.DAL
 {
@@ -11,14 +12,78 @@ namespace ContosoUniversity.DAL
     {
         protected override void Seed(SchoolContext context)
         {
-            // Create departments first
+            Env.Load();
+
+            // Create administrators FIRST since departments now reference them
+            var administrators = new List<Administrator>
+            {
+                new Administrator { FirstMidName = "Admin", LastName = "User",
+                    UserName = "admin", Password = "password123",
+                    AdministratorSince = DateTime.Parse("2010-01-01"),
+                    AdministrativeLevel = "SuperAdmin",
+                    CanManageUsers = true, CanManageSystem = true,
+                    CanViewReports = true, CanManageAllDepartments = true },
+                new Administrator { FirstMidName = "Department", LastName = "Head",
+                    UserName = "deptadmin", Password = "password123",
+                    AdministratorSince = DateTime.Parse("2015-06-01"),
+                    AdministrativeLevel = "DepartmentAdmin",
+                    CanManageUsers = false, CanManageSystem = false,
+                    CanViewReports = true, CanManageAllDepartments = false },
+                new Administrator { FirstMidName = "Engineering", LastName = "Admin",
+                    UserName = "engadmin", Password = "password123",
+                    AdministratorSince = DateTime.Parse("2018-03-15"),
+                    AdministrativeLevel = "DepartmentAdmin",
+                    CanManageUsers = false, CanManageSystem = false,
+                    CanViewReports = true, CanManageAllDepartments = false },
+                new Administrator { FirstMidName = "English", LastName = "Admin",
+                    UserName = "engladmin", Password = "password123",
+                    AdministratorSince = DateTime.Parse("2019-08-20"),
+                    AdministrativeLevel = "DepartmentAdmin",
+                    CanManageUsers = false, CanManageSystem = false,
+                    CanViewReports = true, CanManageAllDepartments = false },
+                new Administrator { FirstMidName = "Science", LastName = "Admin",
+                    UserName = "sciadmin", Password = "password123",
+                    AdministratorSince = DateTime.Parse("2020-01-10"),
+                    AdministrativeLevel = "DepartmentAdmin",
+                    CanManageUsers = false, CanManageSystem = false,
+                    CanViewReports = true, CanManageAllDepartments = false }
+            };
+            administrators.ForEach(a => context.Administrators.Add(a));
+            context.SaveChanges();
+
+            // Create departments with AdministratorID references
             var departments = new List<Department>
             {
-                new Department { Name = "Engineering", Budget = 350000, StartDate = DateTime.Parse("2007-09-01") },
-                new Department { Name = "English", Budget = 120000, StartDate = DateTime.Parse("2007-09-01") },
-                new Department { Name = "Economics", Budget = 200000, StartDate = DateTime.Parse("2007-09-01") },
-                new Department { Name = "Mathematics", Budget = 250000, StartDate = DateTime.Parse("2007-09-01") },
-                new Department { Name = "Chemistry", Budget = 180000, StartDate = DateTime.Parse("2008-09-01") }
+                new Department {
+                    Name = "Engineering",
+                    Budget = 350000,
+                    StartDate = DateTime.Parse("2007-09-01"),
+                    AdministratorID = administrators[2].ID // Engineering Admin
+                },
+                new Department {
+                    Name = "English",
+                    Budget = 120000,
+                    StartDate = DateTime.Parse("2007-09-01"),
+                    AdministratorID = administrators[3].ID // English Admin
+                },
+                new Department {
+                    Name = "Economics",
+                    Budget = 200000,
+                    StartDate = DateTime.Parse("2007-09-01"),
+                    AdministratorID = administrators[1].ID // Department Head
+                },
+                new Department {
+                    Name = "Mathematics",
+                    Budget = 250000,
+                    StartDate = DateTime.Parse("2007-09-01"),
+                    AdministratorID = administrators[0].ID // Super Admin
+                },
+                new Department {
+                    Name = "Chemistry",
+                    Budget = 180000,
+                    StartDate = DateTime.Parse("2008-09-01"),
+                    AdministratorID = administrators[4].ID // Science Admin
+                }
             };
             departments.ForEach(d => context.Departments.Add(d));
             context.SaveChanges();
@@ -43,33 +108,6 @@ namespace ContosoUniversity.DAL
                     Specialization = "Chemistry", Salary = 68000m }
             };
             instructors.ForEach(i => context.Instructors.Add(i));
-            context.SaveChanges();
-
-            // Create administrators
-            var administrators = new List<Administrator>
-            {
-                new Administrator { FirstMidName = "Admin", LastName = "User",
-                    UserName = "admin", Password = "password123",
-                    AdministratorSince = DateTime.Parse("2010-01-01"),
-                    AdministrativeLevel = "SuperAdmin",
-                    CanManageUsers = true, CanManageSystem = true,
-                    CanViewReports = true, CanManageAllDepartments = true },
-                new Administrator { FirstMidName = "Department", LastName = "Head",
-                    UserName = "deptadmin", Password = "password123",
-                    AdministratorSince = DateTime.Parse("2015-06-01"),
-                    AdministrativeLevel = "DepartmentAdmin",
-                    CanManageUsers = false, CanManageSystem = false,
-                    CanViewReports = true, CanManageAllDepartments = false }
-            };
-            administrators.ForEach(a => context.Administrators.Add(a));
-            context.SaveChanges();
-
-            // Assign department administrators
-            departments[0].InstructorID = instructors[0].ID; // Engineering -> Kim
-            departments[1].InstructorID = instructors[1].ID; // English -> Fadi  
-            departments[2].InstructorID = instructors[2].ID; // Economics -> Roger H
-            departments[3].InstructorID = instructors[3].ID; // Mathematics -> Candace
-            departments[4].InstructorID = instructors[4].ID; // Chemistry -> Roger Z
             context.SaveChanges();
 
             // Create students with usernames and passwords

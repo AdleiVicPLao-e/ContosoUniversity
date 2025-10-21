@@ -2,7 +2,6 @@
     ViewBag.Title = "Access Denied";
     Layout = "~/Views/Shared/_Layout.cshtml";
 
-    // Determine dashboard URL based on user role
     string dashboardUrl = "";
     if (ViewBag.CurrentUser != null)
     {
@@ -21,27 +20,34 @@
     }
 }
 
-<div class="container">
-    <div class="row">
-        <div class="col-md-6 col-md-offset-3">
-            <div class="panel panel-danger">
-                <div class="panel-heading">
-                    <h3 class="panel-title">Access Denied</h3>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-danger shadow-sm">
+                <div class="card-header bg-danger text-white text-center">
+                    <h3 class="mb-0"><i class="bi bi-shield-lock-fill me-2"></i>Access Denied</h3>
                 </div>
-                <div class="panel-body text-center">
-                    <span class="glyphicon glyphicon-ban-circle" style="font-size: 64px; color: #d9534f;"></span>
-                    <h2>Access Denied</h2>
-                    <p class="lead">You don't have permission to access this page.</p>
-                    <p>Please contact your administrator if you believe this is an error.</p>
-                    <div class="btn-group">
+                <div class="card-body text-center">
+                    <div class="display-1 text-danger mb-3">
+                        <i class="bi bi-slash-circle-fill"></i>
+                    </div>
+                    <h4 class="fw-bold">You don’t have permission to access this page.</h4>
+                    <p class="text-muted mb-4">If you believe this is an error, please contact your administrator.</p>
+                    <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
                         @if (!string.IsNullOrEmpty(dashboardUrl))
                         {
-                            <a href="@dashboardUrl" class="btn btn-primary">Go to Dashboard</a>
+                            <a href="@dashboardUrl" class="btn btn-primary">
+                                <i class="bi bi-speedometer2 me-1"></i> Go to Dashboard
+                            </a>
                         }
-                        @Html.ActionLink("Go to Home", "Index", "Home", null, new { @class = "btn btn-default" })
+                        @Html.ActionLink("Go to Home", "Index", "Home", null, new { @class = "btn btn-outline-secondary" })
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.js"></script>
+}

@@ -4,156 +4,145 @@
     ViewBag.Title = "Instructor Dashboard";
 }
 
-<h2>Welcome, @Model.Instructor.FirstMidName!</h2>
+<div class="container mt-4">
+    <h2 class="mb-4">Welcome, @Model.Instructor.FirstMidName!</h2>
 
-<div class="row">
-    <div class="col-md-3">
-        <div class="panel panel-primary">
-            <div class="panel-heading">
-                <h3 class="panel-title">Total Students</h3>
-            </div>
-            <div class="panel-body">
-                <h4>@Model.TotalStudents</h4>
-                <p>Across all courses</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="panel panel-success">
-            <div class="panel-heading">
-                <h3 class="panel-title">Active Courses</h3>
-            </div>
-            <div class="panel-body">
-                <h4>@Model.ActiveCourses</h4>
-                <p>Currently teaching</p>
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card text-bg-primary shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Students</h5>
+                    <h2>@Model.TotalStudents</h2>
+                    <p class="mb-0">Across all courses</p>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-3">
-        <div class="panel panel-info">
-            <div class="panel-heading">
-                <h3 class="panel-title">Average Students</h3>
-            </div>
-            <div class="panel-body">
-                <h4>@Model.AverageStudentsPerCourse.ToString("F1")</h4>
-                <p>Per course</p>
+        <div class="col-md-3">
+            <div class="card text-bg-success shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Active Courses</h5>
+                    <h2>@Model.ActiveCourses</h2>
+                    <p class="mb-0">Currently teaching</p>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-3">
-        <div class="panel panel-warning">
-            <div class="panel-heading">
-                <h3 class="panel-title">Courses Needing Grades</h3>
-            </div>
-            <div class="panel-body">
-                <h4>@Model.CoursesNeedingGrades</h4>
-                <p>Require attention</p>
+        <div class="col-md-3">
+            <div class="card text-bg-info shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Average Students</h5>
+                    <h2>@Model.AverageStudentsPerCourse.ToString("F1")</h2>
+                    <p class="mb-0">Per course</p>
+                </div>
             </div>
         </div>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-6">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">Upcoming Deadlines</h3>
-            </div>
-            <div class="panel-body">
-                @if (Model.UpcomingDeadlines.Any())
-                {
-                    <div class="list-group">
-                        @foreach (var deadline in Model.UpcomingDeadlines)
-                        {
-                            <div class="list-group-item">
-                                <span class="glyphicon glyphicon-time text-warning"></span>
-                                @deadline
-                            </div>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <p class="text-muted">No upcoming deadlines</p>
-                }
-            </div>
-        </div>
-
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">Instructor Information</h3>
-            </div>
-            <div class="panel-body">
-                <dl class="dl-horizontal">
-                    <dt>Name:</dt>
-                    <dd>@Model.Instructor.FullName</dd>
-                    <dt>Username:</dt>
-                    <dd>@Model.Instructor.UserName</dd>
-                    <dt>Hire Date:</dt>
-                    <dd>@Model.Instructor.HireDate.ToString("MMMM dd, yyyy")</dd>
-                    <dt>Specialization:</dt>
-                    <dd>@(Model.Instructor.Specialization ?? "Not specified")</dd>
-                    <dt>Office:</dt>
-                    <dd>@(Model.Instructor.OfficeAssignment?.Location ?? "No office assigned")</dd>
-                </dl>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-6">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">Recent Enrollments</h3>
-            </div>
-            <div class="panel-body">
-                @if (Model.RecentEnrollments.Any())
-                {
-                    <div class="list-group">
-                        @foreach (var enrollment in Model.RecentEnrollments)
-                        {
-                            <div class="list-group-item">
-                                <h5 class="list-group-item-heading">@enrollment.Student.FullName</h5>
-                                <p class="list-group-item-text">
-                                    Enrolled in <strong>@enrollment.Course.Title</strong><br />
-                                    <small class="text-muted">@enrollment.Course.Department.Name</small>
-                                </p>
-                            </div>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <p class="text-muted">No recent enrollments</p>
-                }
-            </div>
-        </div>
-
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">Quick Actions</h3>
-            </div>
-            <div class="panel-body">
-                <div class="btn-group-vertical" style="width: 100%;">
-                    @Html.ActionLink("View My Courses", "MyCourses", null, new { @class = "btn btn-primary btn-block text-left" })
-                    @Html.ActionLink("My Teaching Schedule", "MySchedule", null, new { @class = "btn btn-default btn-block text-left" })
-                    @if (Model.Instructor.OfficeAssignment != null)
-                    {
-                        @Html.ActionLink("Office Information", "Edit", "OfficeAssignment", new { id = Model.Instructor.ID }, new { @class = "btn btn-default btn-block text-left" })
-                    }
-                    else
-                    {
-                        @Html.ActionLink("Request Office", "Create", "OfficeAssignment", null, new { @class = "btn btn-default btn-block text-left" })
-                    }
+        <div class="col-md-3">
+            <div class="card text-bg-warning shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Courses Needing Grades</h5>
+                    <h2>@Model.CoursesNeedingGrades</h2>
+                    <p class="mb-0">Require attention</p>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success alert-dismissible">
-        <button type="button" class="close" data-dismiss="alert">&times;</button>
-        @TempData["Success"]
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light fw-bold">
+                    Upcoming Deadlines
+                </div>
+                <div class="card-body">
+                    @if (Model.UpcomingDeadlines.Any())
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var deadline in Model.UpcomingDeadlines)
+                            {
+                                <li class="list-group-item d-flex align-items-center">
+                                    <i class="bi bi-clock text-warning me-2"></i> @deadline
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">No upcoming deadlines</p>
+                    }
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-light fw-bold">
+                    Instructor Information
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Name:</dt>
+                        <dd class="col-sm-8">@Model.Instructor.FullName</dd>
+
+                        <dt class="col-sm-4">Username:</dt>
+                        <dd class="col-sm-8">@Model.Instructor.UserName</dd>
+
+                        <dt class="col-sm-4">Hire Date:</dt>
+                        <dd class="col-sm-8">@Model.Instructor.HireDate.ToString("MMMM dd, yyyy")</dd>
+
+                        <dt class="col-sm-4">Specialization:</dt>
+                        <dd class="col-sm-8">@(Model.Instructor.Specialization ?? "Not specified")</dd>
+
+                        <dt class="col-sm-4">Office:</dt>
+                        <dd class="col-sm-8">@(Model.Instructor.OfficeAssignment?.Location ?? "No office assigned")</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light fw-bold">
+                    Recent Enrollments
+                </div>
+                <div class="card-body">
+                    @if (Model.RecentEnrollments.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var enrollment in Model.RecentEnrollments)
+                            {
+                                <div class="list-group-item">
+                                    <h6 class="mb-1 fw-bold">@enrollment.Student.FullName</h6>
+                                    <small class="text-muted">
+                                        Enrolled in <strong>@enrollment.Course.Title</strong><br />
+                                        @enrollment.Course.Department.Name
+                                    </small>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">No recent enrollments</p>
+                    }
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-light fw-bold">
+                    Quick Actions
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        @Html.ActionLink("View My Courses", "MyCourses", null, new { @class = "btn btn-primary" })
+                        @Html.ActionLink("My Teaching Schedule", "MySchedule", null, new { @class = "btn btn-outline-secondary" })
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-}
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show mt-4" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+</div>

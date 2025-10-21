@@ -4,69 +4,70 @@
     ViewBag.Title = "My Courses";
 }
 
-<h2>My Courses</h2>
+<div class="container mt-4">
+    <h2 class="mb-3">My Courses</h2>
 
-@using (Html.BeginForm("MyCourses", "Instructor", FormMethod.Get))
-{
-    <div class="form-inline mb-3">
-        <div class="form-group">
-            @Html.DropDownList("status", ViewBag.StatusFilter as SelectList, new { @class = "form-control" })
-        </div>
-        <input type="submit" value="Filter" class="btn btn-default" />
-    </div>
-}
-
-<div class="row">
-    @foreach (var course in Model)
+    @using (Html.BeginForm("MyCourses", "Instructor", FormMethod.Get))
     {
-        <div class="col-md-4">
-            <div class="panel panel-@(course.IsActive ? "default" : "warning")">
-                <div class="panel-heading">
-                    <h4 class="panel-title">@course.Title</h4>
-                </div>
-                <div class="panel-body">
-                    <p><strong>Course ID:</strong> @course.CourseID</p>
-                    <p><strong>Department:</strong> @course.Department.Name</p>
-                    <p><strong>Credits:</strong> @course.Credits</p>
-                    <p>
-                        <strong>Enrolled Students:</strong>
-                        <span class="label label-@(course.EnrolledStudents > 0 ? "primary" : "default")">
-                            @course.EnrolledStudents / @course.Capacity
-                        </span>
-                    </p>
-                    <p>
-                        <strong>Status:</strong>
-                        <span class="label label-@(course.Status == "Active" ? "success" : course.Status == "Full" ? "warning" : "default")">
-                            @course.Status
-                        </span>
-                    </p>
-                    @if (!string.IsNullOrEmpty(course.Description))
-                    {
-                        <p>
-                            <strong>Description:</strong>
-                            <br /><small class="text-muted">@course.Description</small>
-                        </p>
-                    }
-                </div>
-                <div class="panel-footer">
-                    <div class="btn-group btn-group-justified">
-                        @Html.ActionLink("View Students", "CourseStudents", new { id = course.CourseID }, new { @class = "btn btn-primary btn-sm" })
-                        @Html.ActionLink("Details", "CourseDetails", new { id = course.CourseID }, new { @class = "btn btn-default btn-sm" })
-                    </div>
-                </div>
+        <div class="row mb-4">
+            <div class="col-auto">
+                @Html.DropDownList("status", ViewBag.StatusFilter as SelectList, new { @class = "form-select" })
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Filter</button>
             </div>
         </div>
     }
-</div>
 
-@if (!Model.Any())
-{
-    <div class="alert alert-info">
-        <h4>No Courses Found</h4>
-        <p>You are not assigned to any courses matching your filter criteria.</p>
+    <div class="row g-4">
+        @foreach (var course in Model)
+        {
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100 border-@(course.IsActive ? "success" : "warning")">
+                    <div class="card-header fw-bold">@course.Title</div>
+                    <div class="card-body">
+                        <p><strong>Course ID:</strong> @course.CourseID</p>
+                        <p><strong>Department:</strong> @course.Department.Name</p>
+                        <p><strong>Credits:</strong> @course.Credits</p>
+                        <p>
+                            <strong>Enrolled:</strong>
+                            <span class="badge bg-@(course.EnrolledStudents > 0 ? "primary" : "secondary")">
+                                @course.EnrolledStudents / @course.Capacity
+                            </span>
+                        </p>
+                        <p>
+                            <strong>Status:</strong>
+                            <span class="badge bg-@(
+                                course.Status == "Active" ? "success" :
+                                course.Status == "Full" ? "warning" : "secondary"
+                            )">@course.Status</span>
+                        </p>
+
+                        @if (!string.IsNullOrEmpty(course.Description))
+                        {
+                            <p class="small text-muted">@course.Description</p>
+                        }
+                    </div>
+                    <div class="card-footer bg-light">
+                        <div class="d-grid gap-2">
+                            @Html.ActionLink("View Students", "CourseStudents", new { id = course.CourseID }, new { @class = "btn btn-primary btn-sm" })
+                            @Html.ActionLink("Details", "CourseDetails", new { id = course.CourseID }, new { @class = "btn btn-outline-secondary btn-sm" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
-}
 
-<div class="well">
-    @Html.ActionLink("Back to Dashboard", "Dashboard", null, new { @class = "btn btn-default" })
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info mt-4">
+            <h5>No Courses Found</h5>
+            <p>You are not assigned to any courses matching your filter criteria.</p>
+        </div>
+    }
+
+    <div class="mt-4">
+        @Html.ActionLink("Back to Dashboard", "Dashboard", null, new { @class = "btn btn-outline-secondary" })
+    </div>
 </div>

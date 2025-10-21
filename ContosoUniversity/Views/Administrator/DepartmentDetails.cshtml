@@ -4,27 +4,27 @@
     ViewBag.Title = "Department Details";
 }
 
-<h2>Department Details</h2>
+<h2 class="mb-4"><i class="bi bi-info-circle me-2"></i>Department Details</h2>
 
-<div class="row">
+<div class="row g-4">
     <div class="col-md-6">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">Department Information</h3>
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Department Information</h5>
             </div>
-            <div class="panel-body">
-                <dl class="dl-horizontal">
-                    <dt>Name:</dt>
-                    <dd>@Model.Name</dd>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Name:</dt>
+                    <dd class="col-sm-8">@Model.Name</dd>
 
-                    <dt>Budget:</dt>
-                    <dd>@String.Format("{0:C}", Model.Budget)</dd>
+                    <dt class="col-sm-4">Budget:</dt>
+                    <dd class="col-sm-8">@String.Format("{0:C}", Model.Budget)</dd>
 
-                    <dt>Start Date:</dt>
-                    <dd>@Model.StartDate.ToString("MMMM dd, yyyy")</dd>
+                    <dt class="col-sm-4">Start Date:</dt>
+                    <dd class="col-sm-8">@Model.StartDate.ToString("MMMM dd, yyyy")</dd>
 
-                    <dt>Administrator:</dt>
-                    <dd>
+                    <dt class="col-sm-4">Administrator:</dt>
+                    <dd class="col-sm-8">
                         @if (Model.Administrator != null)
                         {
                             @Model.Administrator.FullName
@@ -40,28 +40,28 @@
     </div>
 
     <div class="col-md-6">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">Department Statistics</h3>
+        <div class="card shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">Department Statistics</h5>
             </div>
-            <div class="panel-body">
-                <dl class="dl-horizontal">
-                    <dt>Total Courses:</dt>
-                    <dd>@Model.Courses.Count</dd>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-6">Total Courses:</dt>
+                    <dd class="col-sm-6">@Model.Courses.Count</dd>
 
-                    <dt>Total Students:</dt>
-                    <dd>@Model.Courses.Sum(c => c.Enrollments.Count)</dd>
+                    <dt class="col-sm-6">Total Students:</dt>
+                    <dd class="col-sm-6">@Model.Courses.Sum(c => c.Enrollments.Count)</dd>
 
-                    <dt>Total Instructors:</dt>
-                    <dd>@ViewBag.TotalInstructors</dd>
+                    <dt class="col-sm-6">Total Instructors:</dt>
+                    <dd class="col-sm-6">@ViewBag.TotalInstructors</dd>
                 </dl>
             </div>
         </div>
     </div>
 </div>
 
-<div class="well">
+<div class="mt-4 d-flex flex-wrap gap-2">
     @Html.ActionLink("Edit", "EditDepartment", "Administrator", new { id = Model.DepartmentID }, new { @class = "btn btn-primary" })
-    @Html.ActionLink("Back to Department List", "ManageDepartments", "Administrator", null, new { @class = "btn btn-default" })
-    @Html.ActionLink("Back to Dashboard", "Dashboard", "Administrator", null, new { @class = "btn btn-default" })
+    @Html.ActionLink("Back to Department List", "ManageDepartments", "Administrator", null, new { @class = "btn btn-secondary" })
+    @Html.ActionLink("Back to Dashboard", "Dashboard", "Administrator", null, new { @class = "btn btn-outline-secondary" })
 </div>

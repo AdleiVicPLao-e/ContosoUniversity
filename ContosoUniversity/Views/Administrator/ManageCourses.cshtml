@@ -10,93 +10,103 @@
     <div class="col-md-12">
         @using (Html.BeginForm("ManageCourses", "Administrator", FormMethod.Get))
         {
-            <div class="form-inline mb-3">
-                <div class="form-group">
-                    @Html.DropDownList("departmentId", ViewBag.Departments as SelectList, "All Departments", new { @class = "form-control" })
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    @Html.DropDownList("departmentId", ViewBag.Departments as SelectList, "All Departments", new { @class = "form-select" })
                 </div>
-                <div class="form-group">
-                    @Html.DropDownList("status", ViewBag.StatusFilter as SelectList, new { @class = "form-control" })
+                <div class="col-md-3">
+                    @Html.DropDownList("status", ViewBag.StatusFilter as SelectList, new { @class = "form-select" })
                 </div>
-                <input type="submit" value="Filter" class="btn btn-default" />
-                @Html.ActionLink("Create New Course", "CreateCourse", "Administrator", null, new { @class = "btn btn-primary" })
-                @Html.ActionLink("Update Credits", "UpdateCourseCredits", "Administrator", null, new { @class = "btn btn-info" })
+                <div class="col-md-6">
+                    <input type="submit" value="Filter" class="btn btn-outline-primary" />
+                    @Html.ActionLink("Create New Course", "CreateCourse", "Administrator", null, new { @class = "btn btn-primary" })
+                    @Html.ActionLink("Update Credits", "UpdateCourseCredits", "Administrator", null, new { @class = "btn btn-info" })
+                </div>
             </div>
         }
     </div>
 </div>
 
-<div class="panel panel-default">
-    <div class="panel-heading">
-        <h3 class="panel-title">Courses</h3>
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Courses</h3>
     </div>
-    <div class="panel-body">
-        <table class="table table-striped">
-            <tr>
-                <th>Course ID</th>
-                <th>Title</th>
-                <th>Credits</th>
-                <th>Department</th>
-                <th>Instructors</th>
-                <th>Enrolled</th>
-                <th>Capacity</th>
-                <th>Status</th>
-                <th>Actions</th>
-            </tr>
-
-            @foreach (var item in Model)
-            {
-                <tr>
-                    <td>@item.CourseID</td>
-                    <td>@item.Title</td>
-                    <td>@item.Credits</td>
-                    <td>@item.Department.Name</td>
-                    <td>
-                        @if (item.Instructors.Any())
-                        {
-                            <small>@string.Join(", ", item.Instructors.Select(i => i.LastName))</small>
-                        }
-                        else
-                        {
-                            <span class="text-muted">No instructors</span>
-                        }
-                    </td>
-                    <td>@item.EnrolledStudents</td>
-                    <td>@item.Capacity</td>
-                    <td>
-                        <span class="label label-@(item.IsActive ? "success" : "default")">
-                            @(item.IsActive ? "Active" : "Inactive")
-                        </span>
-                        <br />
-                        <small class="text-muted">@item.Status</small>
-                    </td>
-                    <td>
-                        <div class="btn-group-vertical">
-                            @Html.ActionLink("Details", "CourseDetails", "Administrator", new { id = item.CourseID }, new { @class = "btn btn-xs btn-info" })
-                            @Html.ActionLink("Edit", "EditCourse", "Administrator", new { id = item.CourseID }, new { @class = "btn btn-xs btn-primary" })
-                            @using (Html.BeginForm("ToggleCourseStatus", "Administrator", new { id = item.CourseID }, FormMethod.Post, new { style = "display:inline" }))
-                            {
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-xs btn-@(item.IsActive ? "warning" : "success")">
-                                    @(item.IsActive ? "Deactivate" : "Activate")
-                                </button>
-                            }
-                            @Html.ActionLink("Delete", "DeleteCourse", "Administrator", new { id = item.CourseID }, new { @class = "btn btn-xs btn-danger" })
-                        </div>
-                    </td>
-                </tr>
-            }
-        </table>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Course ID</th>
+                        <th>Title</th>
+                        <th>Credits</th>
+                        <th>Department</th>
+                        <th>Instructors</th>
+                        <th>Enrolled</th>
+                        <th>Capacity</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.CourseID</td>
+                            <td>@item.Title</td>
+                            <td>@item.Credits</td>
+                            <td>@item.Department.Name</td>
+                            <td>
+                                @if (item.Instructors.Any())
+                                {
+                                    <small>@string.Join(", ", item.Instructors.Select(i => i.LastName))</small>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">No instructors</span>
+                                }
+                            </td>
+                            <td>@item.EnrolledStudents</td>
+                            <td>@item.Capacity</td>
+                            <td>
+                                <span class="badge bg-@(item.IsActive ? "success" : "secondary")">
+                                    @(item.IsActive ? "Active" : "Inactive")
+                                </span>
+                                <br />
+                                <small class="text-muted">@item.Status</small>
+                            </td>
+                            <td>
+                                <div class="btn-group-vertical btn-group-sm">
+                                    @Html.ActionLink("Details", "CourseDetails", "Administrator", new { id = item.CourseID }, new { @class = "btn btn-outline-info" })
+                                    @Html.ActionLink("Edit", "EditCourse", "Administrator", new { id = item.CourseID }, new { @class = "btn btn-outline-primary" })
+                                    @using (Html.BeginForm("ToggleCourseStatus", "Administrator", new { id = item.CourseID }, FormMethod.Post, new { style = "display:inline" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-@(item.IsActive ? "warning" : "success")">
+                                            @(item.IsActive ? "Deactivate" : "Activate")
+                                        </button>
+                                    }
+                                    @Html.ActionLink("Delete", "DeleteCourse", "Administrator", new { id = item.CourseID }, new { @class = "btn btn-outline-danger" })
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 @if (TempData["Success"] != null)
 {
-    <div class="alert alert-success">
+    <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
         @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 }
 
-<div class="well">
-    @Html.ActionLink("Back to Dashboard", "Dashboard", "Administrator", null, new { @class = "btn btn-default" })
-    @Html.ActionLink("Manage Departments", "ManageDepartments", "Administrator", null, new { @class = "btn btn-default" })
+<div class="card mt-3">
+    <div class="card-body">
+        @Html.ActionLink("Back to Dashboard", "Dashboard", "Administrator", null, new { @class = "btn btn-outline-secondary" })
+        @Html.ActionLink("Manage Departments", "ManageDepartments", "Administrator", null, new { @class = "btn btn-outline-secondary" })
+    </div>
 </div>

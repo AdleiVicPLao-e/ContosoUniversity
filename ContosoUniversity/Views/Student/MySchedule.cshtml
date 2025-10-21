@@ -4,65 +4,71 @@
     ViewBag.Title = "My Schedule";
 }
 
-<h2>My Course Schedule</h2>
+<div class="container my-4">
+    <h2 class="mb-4">My Course Schedule</h2>
 
-<div class="panel panel-default">
-    <div class="panel-heading">
-        <h3 class="panel-title">Current Semester Schedule</h3>
-    </div>
-    <div class="panel-body">
-        @if (Model.Any())
-        {
-            <table class="table table-striped">
-                <tr>
-                    <th>Course</th>
-                    <th>Course ID</th>
-                    <th>Credits</th>
-                    <th>Department</th>
-                    <th>Instructor</th>
-                    <th>Status</th>
-                </tr>
-                @foreach (var enrollment in Model)
-                {
-                    <tr>
-                        <td>@enrollment.Course.Title</td>
-                        <td>@enrollment.Course.CourseID</td>
-                        <td>@enrollment.Course.Credits</td>
-                        <td>@enrollment.Course.Department.Name</td>
-                        <td>@string.Join(", ", enrollment.Course.Instructors.Select(i => i.FullName))</td>
-                        <td>
-                            @if (enrollment.Grade.HasValue)
-                            {
-                                <span class="label label-success">Completed</span>
-                            }
-                            else
-                            {
-                                <span class="label label-info">In Progress</span>
-                            }
-                        </td>
-                    </tr>
-                }
-            </table>
-
-            <div class="well">
-                <h4>Schedule Summary</h4>
-                <p><strong>Total Courses:</strong> @Model.Count()</p>
-                <p><strong>Total Credits:</strong> @Model.Sum(e => e.Course.Credits)</p>
-                <p><strong>Courses in Progress:</strong> @Model.Count(e => !e.Grade.HasValue)</p>
-                <p><strong>Completed Courses:</strong> @Model.Count(e => e.Grade.HasValue)</p>
+    @if (Model.Any())
+    {
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Current Semester Schedule</h5>
             </div>
-        }
-        else
-        {
-            <div class="alert alert-info">
-                <p>You are not enrolled in any courses this semester.</p>
-                @Html.ActionLink("Browse Available Courses", "AvailableCourses", null, new { @class = "btn btn-primary" })
+            <div class="card-body">
+                <table class="table table-striped table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Course</th>
+                            <th>Course ID</th>
+                            <th>Credits</th>
+                            <th>Department</th>
+                            <th>Instructor</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var enrollment in Model)
+                        {
+                            <tr>
+                                <td>@enrollment.Course.Title</td>
+                                <td>@enrollment.Course.CourseID</td>
+                                <td>@enrollment.Course.Credits</td>
+                                <td>@enrollment.Course.Department.Name</td>
+                                <td>@string.Join(", ", enrollment.Course.Instructors.Select(i => i.FullName))</td>
+                                <td>
+                                    @if (enrollment.Grade.HasValue)
+                                    {
+                                        <span class="badge bg-success">Completed</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-info text-dark">In Progress</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
-        }
-    </div>
-</div>
+        </div>
 
-<div class="well">
-    @Html.ActionLink("Back to Dashboard", "Dashboard", null, new { @class = "btn btn-default" })
-    @Html.ActionLink("Browse Courses", "AvailableCourses", null, new { @class = "btn btn-primary" })
+        <div class="card shadow-sm p-3">
+            <h5>Schedule Summary</h5>
+            <p><strong>Total Courses:</strong> @Model.Count()</p>
+            <p><strong>Total Credits:</strong> @Model.Sum(e => e.Course.Credits)</p>
+            <p><strong>Courses in Progress:</strong> @Model.Count(e => !e.Grade.HasValue)</p>
+            <p><strong>Completed Courses:</strong> @Model.Count(e => e.Grade.HasValue)</p>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info mt-4">
+            <p>You are not enrolled in any courses this semester.</p>
+            @Html.ActionLink("Browse Available Courses", "AvailableCourses", null, new { @class = "btn btn-primary" })
+        </div>
+    }
+
+    <div class="mt-4 d-flex gap-2">
+        @Html.ActionLink("Back to Dashboard", "Dashboard", null, new { @class = "btn btn-outline-secondary" })
+        @Html.ActionLink("Browse Courses", "AvailableCourses", null, new { @class = "btn btn-primary" })
+    </div>
 </div>

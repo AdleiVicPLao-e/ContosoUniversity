@@ -68,6 +68,11 @@ namespace ContosoUniversity.Models
         [Required]
         public UserRole Roles { get; set; }
 
+        // Track login status to prevent multiple logins
+        [Required]
+        [Display(Name = "Is Logged In")]
+        public bool IsLoggedIn { get; set; } = false;
+
         // Individual role checkers
         [NotMapped]
         public bool IsStudent => HasRole(UserRole.Student);
@@ -110,6 +115,34 @@ namespace ContosoUniversity.Models
             return System.Enum.GetValues(typeof(UserRole))
                 .Cast<UserRole>()
                 .Where(role => HasRole(role));
+        }
+
+        // Login/Logout methods
+        public bool TryLogin(string enteredPassword)
+        {
+            if (IsLoggedIn)
+            {
+                return false; // Already logged in elsewhere
+            }
+
+            if (Password == enteredPassword)
+            {
+                IsLoggedIn = true;
+                return true;
+            }
+
+            return false;
+        }
+
+        public void Logout()
+        {
+            IsLoggedIn = false;
+        }
+
+        public void ForceLogout()
+        {
+            IsLoggedIn = false;
+            // You might want to log this action for security purposes
         }
 
         // Validation to ensure at least one role is set

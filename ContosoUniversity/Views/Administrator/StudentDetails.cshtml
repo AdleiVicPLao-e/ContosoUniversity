@@ -4,71 +4,70 @@
     ViewBag.Title = "Student Details";
 }
 
-<h2>Student Details</h2>
+<h2 class="mb-4"><i class="bi bi-person me-2"></i>Student Details</h2>
 
-<div class="panel panel-default">
-    <div class="panel-heading">
-        <h3 class="panel-title">Basic Information</h3>
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Basic Information</h5>
     </div>
-    <div class="panel-body">
-        <dl class="dl-horizontal">
-            <dt>@Html.DisplayNameFor(model => model.FullName)</dt>
-            <dd>@Html.DisplayFor(model => model.FullName)</dd>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.FullName)</dt>
+            <dd class="col-sm-9">@Html.DisplayFor(model => model.FullName)</dd>
 
-            <dt>@Html.DisplayNameFor(model => model.UserName)</dt>
-            <dd>@Html.DisplayFor(model => model.UserName)</dd>
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.UserName)</dt>
+            <dd class="col-sm-9">@Html.DisplayFor(model => model.UserName)</dd>
 
-            <dt>@Html.DisplayNameFor(model => model.EnrollmentDate)</dt>
-            <dd>@Html.DisplayFor(model => model.EnrollmentDate)</dd>
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.EnrollmentDate)</dt>
+            <dd class="col-sm-9">@Html.DisplayFor(model => model.EnrollmentDate)</dd>
 
-            <dt>@Html.DisplayNameFor(model => model.StudentCode)</dt>
-            <dd>@Html.DisplayFor(model => model.StudentCode)</dd>
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.StudentCode)</dt>
+            <dd class="col-sm-9">@Html.DisplayFor(model => model.StudentCode)</dd>
         </dl>
     </div>
 </div>
 
-<div class="panel panel-default">
-    <div class="panel-heading">
-        <h3 class="panel-title">Course Enrollments</h3>
+<div class="card shadow-sm">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">Course Enrollments</h5>
     </div>
-    <div class="panel-body">
+    <div class="card-body">
         @if (Model.Enrollments.Any())
         {
-            <table class="table">
-                <tr>
-                    <th>Course</th>
-                    <th>Credits</th>
-                    <th>Department</th>
-                    <th>Grade</th>
-                </tr>
-                @foreach (var enrollment in Model.Enrollments)
-                {
+            <table class="table table-striped table-hover">
+                <thead class="table-light">
                     <tr>
-                        <td>@enrollment.Course.Title</td>
-                        <td>@enrollment.Course.Credits</td>
-                        <td>@enrollment.Course.Department.Name</td>
-                        <td>
-                            @if (enrollment.Grade.HasValue)
-                            {
-                                <span class="label label-success">@enrollment.Grade</span>
-                            }
-                            else
-                            {
-                                <span class="label label-warning">No Grade</span>
-                            }
-                        </td>
+                        <th>Course</th>
+                        <th>Credits</th>
+                        <th>Department</th>
+                        <th>Grade</th>
                     </tr>
-                }
+                </thead>
+                <tbody>
+                    @foreach (var enrollment in Model.Enrollments)
+                    {
+                        <tr>
+                            <td>@enrollment.Course.Title</td>
+                            <td>@enrollment.Course.Credits</td>
+                            <td>@enrollment.Course.Department.Name</td>
+                            <td>
+                                <span class="badge bg-@(enrollment.Grade.HasValue ? "success" : "warning")">
+                                    @(enrollment.Grade.HasValue ? enrollment.Grade.ToString() : "No Grade")
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
             </table>
         }
         else
         {
-            <p>This student is not enrolled in any courses.</p>
+            <p class="text-muted">This student is not enrolled in any courses.</p>
         }
     </div>
 </div>
 
-<div class="well">
+<div class="mt-4 d-flex flex-wrap gap-2">
     @Html.ActionLink("Edit", "EditStudent", "Administrator", new { id = Model.ID }, new { @class = "btn btn-primary" })
-    @Html.ActionLink("Back to List", "ManageStudents", "Administrator", null, new { @class = "btn btn-default" })
+    @Html.ActionLink("Back to List", "ManageStudents", "Administrator", null, new { @class = "btn btn-secondary" })
 </div>

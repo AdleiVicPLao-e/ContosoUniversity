@@ -1,4 +1,5 @@
-﻿using ContosoUniversity.Models;
+﻿using ContosoUniversity.Migrations;
+using ContosoUniversity.Models;
 using System.Data.Entity;
 using System.Data.Entity.ModelConfiguration.Conventions;
 
@@ -50,7 +51,7 @@ namespace ContosoUniversity.DAL
             modelBuilder.Entity<Department>()
                 .HasOptional(d => d.Administrator)
                 .WithMany()
-                .HasForeignKey(d => d.InstructorID);
+                .HasForeignKey(d => d.AdministratorID);
 
             // Configure Course-Department relationship
             modelBuilder.Entity<Course>()

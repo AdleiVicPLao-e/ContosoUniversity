@@ -1,0 +1,46 @@
+@model ContosoUniversity.Models.Course
+
+@{
+    ViewBag.Title = "Update Course Credits";
+}
+
+<div class="container mt-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0"><i class="bi bi-journal-text me-2"></i>Update Course Credits</h3>
+        </div>
+        <div class="card-body">
+            @if (ViewBag.RowsAffected == null)
+            {
+                using (Html.BeginForm("UpdateCourseCredits", "Administrator", FormMethod.Post, new { @class = "needs-validation" }))
+                {
+                    <div class="mb-3">
+                        <label for="multiplier" class="form-label fw-bold">Multiplier</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted">×</span>
+                            @Html.TextBox("multiplier", null, new { @class = "form-control", type = "number", step = "0.1", placeholder = "e.g., 1.5" })
+                        </div>
+                        <div class="form-text">Enter a number to multiply every course’s credits by this value.</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-arrow-repeat me-1"></i> Update Credits
+                    </button>
+                }
+            }
+            else
+            {
+                <div class="alert alert-info mt-3">
+                    <strong>Success!</strong> Number of rows updated: <span class="fw-bold">@ViewBag.RowsAffected</span>
+                </div>
+            }
+        </div>
+        <div class="card-footer bg-light text-end">
+            @Html.ActionLink("Back to Course List", "ManageCourses", "Administrator", null, new { @class = "btn btn-outline-secondary" })
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.js"></script>
+}

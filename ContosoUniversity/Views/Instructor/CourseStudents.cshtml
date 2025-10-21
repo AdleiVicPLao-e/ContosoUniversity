@@ -4,90 +4,92 @@
     ViewBag.Title = "Course Students - " + Model.Title;
 }
 
-<h2>Students in @Model.Title</h2>
+<div class="container mt-4">
+    <h2 class="mb-3">Students in @Model.Title</h2>
 
-<div class="panel panel-default">
-    <div class="panel-heading">
-        <h3 class="panel-title">Student Roster</h3>
-    </div>
-    <div class="panel-body">
-        @if (Model.Enrollments.Any())
-        {
-            <table class="table table-striped">
-                <tr>
-                    <th>Student Name</th>
-                    <th>Username</th>
-                    <th>Enrollment Date</th>
-                    <th>Grade</th>
-                    <th>Actions</th>
-                </tr>
-                @foreach (var enrollment in Model.Enrollments)
-                {
-                    <tr>
-                        <td>@enrollment.Student.FullName</td>
-                        <td>@enrollment.Student.UserName</td>
-                        <td>@enrollment.Student.EnrollmentDate.ToString("yyyy-MM-dd")</td>
-                        <td>
-                            @if (enrollment.Grade.HasValue)
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light fw-bold">Student Roster</div>
+        <div class="card-body">
+            @if (Model.Enrollments.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Student Name</th>
+                                <th>Username</th>
+                                <th>Enrollment Date</th>
+                                <th>Grade</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var enrollment in Model.Enrollments)
                             {
-                                <span class="label label-success">@enrollment.Grade</span>
+                                <tr>
+                                    <td>@enrollment.Student.FullName</td>
+                                    <td>@enrollment.Student.UserName</td>
+                                    <td>@enrollment.Student.EnrollmentDate.ToString("yyyy-MM-dd")</td>
+                                    <td>
+                                        <span class="badge bg-@(enrollment.Grade.HasValue ? "success" : "warning")">
+                                            @(enrollment.Grade?.ToString() ?? "No Grade")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @using (Html.BeginForm("UpdateGrade", "Instructor", FormMethod.Post, new { @class = "d-flex align-items-center gap-2" }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            @Html.Hidden("enrollmentId", enrollment.EnrollmentID)
+                                            @Html.DropDownList("grade",
+                                                Enum.GetValues(typeof(ContosoUniversity.Models.Grade))
+                                                    .Cast<ContosoUniversity.Models.Grade>()
+                                                    .Select(g => new SelectListItem
+                                                    {
+                                                        Text = g.ToString(),
+                                                        Value = ((int)g).ToString(),
+                                                        Selected = enrollment.Grade == g
+                                                    }),
+                                                "Select Grade",
+                                                new { @class = "form-select form-select-sm w-auto" })
+                                            <button type="submit" class="btn btn-sm btn-primary">Update</button>
+                                        }
+                                    </td>
+                                </tr>
                             }
-                            else
-                            {
-                                <span class="label label-warning">No Grade</span>
-                            }
-                        </td>
-                        <td>
-                            @using (Html.BeginForm("UpdateGrade", "Instructor", FormMethod.Post, new { @class = "form-inline" }))
-                            {
-                                @Html.AntiForgeryToken()
-                                @Html.Hidden("enrollmentId", enrollment.EnrollmentID)
-                                <div class="form-group">
-                                    @Html.DropDownList("grade",
-                                        Enum.GetValues(typeof(ContosoUniversity.Models.Grade))
-                                            .Cast<ContosoUniversity.Models.Grade>()
-                                            .Select(g => new SelectListItem
-                                            {
-                                                Text = g.ToString(),
-                                                Value = ((int)g).ToString(),
-                                                Selected = enrollment.Grade == g
-                                            }),
-                                        "Select Grade",
-                                        new { @class = "form-control input-sm" })
-                                </div>
-                                <button type="submit" class="btn btn-primary btn-sm">Update</button>
-                            }
-                        </td>
-                    </tr>
-                }
-            </table>
+                        </tbody>
+                    </table>
+                </div>
 
-            <div class="well">
-                <h4>Course Statistics</h4>
-                <p><strong>Total Students:</strong> @Model.Enrollments.Count</p>
-                <p><strong>Graded Students:</strong> @Model.Enrollments.Count(e => e.Grade.HasValue)</p>
-                <p><strong>Ungraded Students:</strong> @Model.Enrollments.Count(e => !e.Grade.HasValue)</p>
-                <p><strong>Course Capacity:</strong> @Model.Enrollments.Count / @Model.Capacity</p>
-            </div>
-        }
-        else
-        {
-            <div class="alert alert-info">
-                <h4>No Students Enrolled</h4>
-                <p>There are no students currently enrolled in this course.</p>
-            </div>
-        }
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Course Statistics</h5>
+                        <p><strong>Total Students:</strong> @Model.Enrollments.Count</p>
+                        <p><strong>Graded:</strong> @Model.Enrollments.Count(e => e.Grade.HasValue)</p>
+                        <p><strong>Ungraded:</strong> @Model.Enrollments.Count(e => !e.Grade.HasValue)</p>
+                        <p><strong>Capacity:</strong> @Model.Enrollments.Count / @Model.Capacity</p>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <h5>No Students Enrolled</h5>
+                    <p>No students are currently enrolled in this course.</p>
+                </div>
+            }
+        </div>
     </div>
-</div>
 
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success">
-        @TempData["Success"]
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="mt-3 d-flex gap-2">
+        @Html.ActionLink("Back to My Courses", "MyCourses", null, new { @class = "btn btn-outline-secondary" })
+        @Html.ActionLink("Back to Dashboard", "Dashboard", null, new { @class = "btn btn-primary" })
     </div>
-}
-
-<div class="well">
-    @Html.ActionLink("Back to My Courses", "MyCourses", null, new { @class = "btn btn-default" })
-    @Html.ActionLink("Back to Dashboard", "Dashboard", null, new { @class = "btn btn-primary" })
 </div>

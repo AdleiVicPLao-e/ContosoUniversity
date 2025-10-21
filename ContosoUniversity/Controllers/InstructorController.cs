@@ -17,7 +17,8 @@ namespace ContosoUniversity.Controllers
 
             var instructor = db.Instructors
                 .Include(i => i.Courses.Select(c => c.Department))
-                .Include(i => i.Courses.Select(c => c.Enrollments))
+                .Include(i => i.Courses.Select(c => c.Enrollments.Select(e => e.Student))) // Include enrollments and students
+                .Include(i => i.Courses.Select(c => c.Instructors)) // Include course instructors
                 .Include(i => i.OfficeAssignment)
                 .First(i => i.ID == CurrentUser.ID);
 
@@ -55,7 +56,8 @@ namespace ContosoUniversity.Controllers
         {
             return db.Enrollments
                 .Include(e => e.Student)
-                .Include(e => e.Course)
+                .Include(e => e.Course.Department) // Include course department
+                .Include(e => e.Course.Instructors) // Include course instructors
                 .Where(e => e.Course.Instructors.Any(i => i.ID == instructor.ID))
                 .OrderByDescending(e => e.EnrollmentID)
                 .Take(5)
@@ -76,7 +78,8 @@ namespace ContosoUniversity.Controllers
 
             var instructor = db.Instructors
                 .Include(i => i.Courses.Select(c => c.Department))
-                .Include(i => i.Courses.Select(c => c.Enrollments))
+                .Include(i => i.Courses.Select(c => c.Enrollments.Select(e => e.Student))) // Include enrollments and students
+                .Include(i => i.Courses.Select(c => c.Instructors)) // Include course instructors
                 .First(i => i.ID == CurrentUser.ID);
 
             var courses = instructor.Courses.AsQueryable();
@@ -122,10 +125,12 @@ namespace ContosoUniversity.Controllers
                 return new HttpStatusCodeResult(System.Net.HttpStatusCode.BadRequest);
             }
 
-            // Verify the instructor teaches this course
+            // Verify the instructor teaches this course and include all related data
             var course = db.Courses
                 .Include(c => c.Department)
-                .Include(c => c.Enrollments.Select(e => e.Student))
+                .Include(c => c.Instructors) // Include instructors
+                .Include(c => c.Instructors.Select(i => i.OfficeAssignment)) // Include instructor office assignments
+                .Include(c => c.Enrollments.Select(e => e.Student)) // Include enrollments and students
                 .FirstOrDefault(c => c.CourseID == id && c.Instructors.Any(i => i.ID == CurrentUser.ID));
 
             if (course == null)
@@ -146,9 +151,11 @@ namespace ContosoUniversity.Controllers
                 return new HttpStatusCodeResult(System.Net.HttpStatusCode.BadRequest);
             }
 
-            // Verify the instructor teaches this course
+            // Verify the instructor teaches this course and include all related data
             var course = db.Courses
-                .Include(c => c.Enrollments.Select(e => e.Student))
+                .Include(c => c.Department) // Include department
+                .Include(c => c.Instructors) // Include instructors
+                .Include(c => c.Enrollments.Select(e => e.Student)) // Include enrollments and students
                 .FirstOrDefault(c => c.CourseID == id && c.Instructors.Any(i => i.ID == CurrentUser.ID));
 
             if (course == null)
@@ -160,25 +167,37 @@ namespace ContosoUniversity.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public ActionResult UpdateGrade(int enrollmentId, Grade grade)
         {
             RequireRole(Person.UserRole.Instructor);
 
-            var enrollment = db.Enrollments.Find(enrollmentId);
+            var enrollment = db.Enrollments
+                .Include(e => e.Student) // Include student
+                .Include(e => e.Course) // Include course
+                .FirstOrDefault(e => e.EnrollmentID == enrollmentId);
+
+            if (enrollment == null)
+            {
+                TempData["Error"] = "Enrollment not found";
+                return RedirectToAction("MyCourses");
+            }
+
             var course = db.Courses
-                .Include(c => c.Instructors)
-                .First(c => c.Enrollments.Any(e => e.EnrollmentID == enrollmentId));
+                .Include(c => c.Instructors) // Include instructors
+                .First(c => c.CourseID == enrollment.CourseID);
 
             // Verify the instructor teaches this course
             if (!course.Instructors.Any(i => i.ID == CurrentUser.ID))
             {
-                return new HttpStatusCodeResult(403, "Not authorized to grade this course");
+                TempData["Error"] = "Not authorized to grade this course";
+                return RedirectToAction("MyCourses");
             }
 
             enrollment.Grade = grade;
             db.SaveChanges();
 
-            TempData["Success"] = "Grade updated successfully";
+            TempData["Success"] = $"Grade updated successfully for {enrollment.Student.FullName}";
             return RedirectToAction("CourseStudents", new { id = course.CourseID });
         }
 
@@ -189,9 +208,109 @@ namespace ContosoUniversity.Controllers
 
             var instructor = db.Instructors
                 .Include(i => i.Courses.Select(c => c.Department))
+                .Include(i => i.Courses.Select(c => c.Instructors)) // Include course instructors
+                .Include(i => i.Courses.Select(c => c.Enrollments)) // Include enrollments
                 .First(i => i.ID == CurrentUser.ID);
 
             return View(instructor.Courses.Where(c => c.IsActive).ToList());
+        }
+
+        // GET: Instructor/StudentSearch
+        public ActionResult StudentSearch(string searchString)
+        {
+            RequireRole(Person.UserRole.Instructor);
+
+            var instructor = db.Instructors
+                .Include(i => i.Courses.Select(c => c.Enrollments.Select(e => e.Student))) // Include all related data
+                .First(i => i.ID == CurrentUser.ID);
+
+            var students = instructor.Courses
+                .SelectMany(c => c.Enrollments)
+                .Select(e => e.Student)
+                .Distinct();
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                students = students.Where(s =>
+                    s.FirstMidName.Contains(searchString) ||
+                    s.LastName.Contains(searchString) ||
+                    s.UserName.Contains(searchString));
+            }
+
+            ViewBag.SearchString = searchString;
+            return View(students.ToList());
+        }
+
+        // GET: Instructor/Gradebook
+        public ActionResult Gradebook(int? courseId)
+        {
+            RequireRole(Person.UserRole.Instructor);
+
+            var instructor = db.Instructors
+                .Include(i => i.Courses.Select(c => c.Department))
+                .Include(i => i.Courses.Select(c => c.Enrollments.Select(e => e.Student)))
+                .First(i => i.ID == CurrentUser.ID);
+
+            // Get selected course or first course
+            var selectedCourse = courseId.HasValue
+                ? instructor.Courses.FirstOrDefault(c => c.CourseID == courseId)
+                : instructor.Courses.FirstOrDefault();
+
+            if (selectedCourse == null)
+            {
+                TempData["Error"] = "No courses found";
+                return RedirectToAction("Dashboard");
+            }
+
+            var viewModel = new InstructorGradebookViewModel
+            {
+                Courses = instructor.Courses.ToList(),
+                SelectedCourse = selectedCourse,
+                Enrollments = selectedCourse.Enrollments.ToList()
+            };
+
+            return View(viewModel);
+        }
+
+        // POST: Instructor/UpdateMultipleGrades
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult UpdateMultipleGrades(Dictionary<int, Grade> grades)
+        {
+            RequireRole(Person.UserRole.Instructor);
+
+            try
+            {
+                foreach (var gradeEntry in grades)
+                {
+                    var enrollment = db.Enrollments
+                        .Include(e => e.Course.Instructors)
+                        .FirstOrDefault(e => e.EnrollmentID == gradeEntry.Key);
+
+                    if (enrollment != null && enrollment.Course.Instructors.Any(i => i.ID == CurrentUser.ID))
+                    {
+                        enrollment.Grade = gradeEntry.Value;
+                    }
+                }
+
+                db.SaveChanges();
+                TempData["Success"] = "Grades updated successfully";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "An error occurred while updating grades";
+            }
+
+            return RedirectToAction("Gradebook");
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                db.Dispose();
+            }
+            base.Dispose(disposing);
         }
     }
 }
