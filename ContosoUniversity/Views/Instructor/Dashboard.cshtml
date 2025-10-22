@@ -48,29 +48,6 @@
 
     <div class="row g-4">
         <div class="col-md-6">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-light fw-bold">
-                    Upcoming Deadlines
-                </div>
-                <div class="card-body">
-                    @if (Model.UpcomingDeadlines.Any())
-                    {
-                        <ul class="list-group list-group-flush">
-                            @foreach (var deadline in Model.UpcomingDeadlines)
-                            {
-                                <li class="list-group-item d-flex align-items-center">
-                                    <i class="bi bi-clock text-warning me-2"></i> @deadline
-                                </li>
-                            }
-                        </ul>
-                    }
-                    else
-                    {
-                        <p class="text-muted mb-0">No upcoming deadlines</p>
-                    }
-                </div>
-            </div>
-
             <div class="card shadow-sm">
                 <div class="card-header bg-light fw-bold">
                     Instructor Information

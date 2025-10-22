@@ -9,7 +9,6 @@ namespace ContosoUniversity.Models
 {
     public abstract class Person
     {
-        // Define user roles as bit flags (outside the class if you prefer global use)
         public enum UserRole
         {
             Student = 1,
@@ -25,25 +24,24 @@ namespace ContosoUniversity.Models
 
         [Required]
         [StringLength(50)]
+        [Index(IsUnique = true)]
         public string UserName
         {
             get => username;
             set => username = value;
         }
 
-        // 🔐 Encrypted value stored in DB
         [Required]
         [Column("EncryptedPassword")]
-        [ScaffoldColumn(false)] // Not displayed in auto forms
+        [ScaffoldColumn(false)]
         public string EncryptedPassword
         {
             get => password;
             set => password = value;
         }
 
-        // 🔒 Computed password property (NotMapped, decrypted on get)
         [NotMapped]
-        [ScaffoldColumn(false)] // Don’t show this in any auto form
+        [ScaffoldColumn(false)]
         public string Password
         {
             get => string.IsNullOrEmpty(password)
@@ -69,7 +67,6 @@ namespace ContosoUniversity.Models
         [Display(Name = "Full Name")]
         public string FullName => $"{LastName}, {FirstMidName}";
 
-        // 🧩 Roles with bitwise flags
         [Required]
         public UserRole Roles { get; set; }
 
@@ -77,15 +74,13 @@ namespace ContosoUniversity.Models
         [Display(Name = "Is Logged In")]
         public bool IsLoggedIn { get; set; } = false;
 
-        // 🧱 Soft delete flag — protected so only controller/service can modify
         [ScaffoldColumn(false)]
         public bool IsDeleted
         {
             get => deleted;
-            set => deleted = value; // only controller or derived class can change
+            set => deleted = value;
         }
 
-        // ✅ Role accessors
         [NotMapped] public bool IsStudent => HasRole(UserRole.Student);
         [NotMapped] public bool IsInstructor => HasRole(UserRole.Instructor);
         [NotMapped] public bool IsAdministrator => HasRole(UserRole.Administrator);
@@ -97,7 +92,6 @@ namespace ContosoUniversity.Models
             HasRole(UserRole.Student) ? UserRole.Student :
             UserRole.Student;
 
-        // Role helpers
         public bool HasRole(UserRole role) => (Roles & role) == role;
         public void AddRole(UserRole role) => Roles |= role;
         public void RemoveRole(UserRole role) => Roles &= ~role;
@@ -105,26 +99,5 @@ namespace ContosoUniversity.Models
             System.Enum.GetValues(typeof(UserRole))
                 .Cast<UserRole>()
                 .Where(HasRole);
-
-        // Login logic
-        public bool TryLogin(string enteredPassword)
-        {
-            if (IsLoggedIn)
-                return false; // already logged in
-
-            if (Password == enteredPassword)
-            {
-                IsLoggedIn = true;
-                return true;
-            }
-
-            return false;
-        }
-
-        public void Logout() => IsLoggedIn = false;
-        public void ForceLogout() => IsLoggedIn = false;
-
-        // Validation
-        protected virtual bool ValidateRoles() => Roles != 0;
     }
 }

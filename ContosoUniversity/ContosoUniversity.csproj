@@ -224,6 +224,18 @@
     <Compile Include="Migrations\202510220244127_InitialCreate.Designer.cs">
       <DependentUpon>202510220244127_InitialCreate.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202510220755392_uniqueUsername.cs" />
+    <Compile Include="Migrations\202510220755392_uniqueUsername.Designer.cs">
+      <DependentUpon>202510220755392_uniqueUsername.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202510220822560_uniqueUsername2.cs" />
+    <Compile Include="Migrations\202510220822560_uniqueUsername2.Designer.cs">
+      <DependentUpon>202510220822560_uniqueUsername2.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202510220845455_updateOnAttributes.cs" />
+    <Compile Include="Migrations\202510220845455_updateOnAttributes.Designer.cs">
+      <DependentUpon>202510220845455_updateOnAttributes.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Administrator.cs" />
     <Compile Include="Models\Course.cs" />
@@ -242,7 +254,6 @@
     <Compile Include="ViewModels\InstructorIndexData.cs" />
     <Compile Include="ViewModels\InstructorManagementViewModel.cs" />
     <Compile Include="ViewModels\ProfileViewModel.cs" />
-    <Compile Include="ViewModels\StudentAssignmentViewModel.cs" />
     <Compile Include="ViewModels\StudentProgressViewModel.cs" />
     <Compile Include="ViewModels\StudentTranscriptViewModel.cs" />
     <None Include="Views\Administrator\CreateInstructor.cshtml" />
@@ -362,6 +373,15 @@
   <ItemGroup>
     <EmbeddedResource Include="Migrations\202510220244127_InitialCreate.resx">
       <DependentUpon>202510220244127_InitialCreate.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510220755392_uniqueUsername.resx">
+      <DependentUpon>202510220755392_uniqueUsername.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510220822560_uniqueUsername2.resx">
+      <DependentUpon>202510220822560_uniqueUsername2.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510220845455_updateOnAttributes.resx">
+      <DependentUpon>202510220845455_updateOnAttributes.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

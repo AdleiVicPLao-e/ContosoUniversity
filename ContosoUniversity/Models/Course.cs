@@ -11,6 +11,7 @@ namespace ContosoUniversity.Models
         public int CourseID { get; set; }
 
         [StringLength(50, MinimumLength = 3)]
+        [Index(IsUnique = true)]
         public string Title { get; set; }
 
         [StringLength(500)]

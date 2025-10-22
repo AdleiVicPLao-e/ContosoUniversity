@@ -54,7 +54,14 @@
                         <td class="text-center">
                             <div class="btn-group btn-group-sm" role="group">
                                 @Html.ActionLink("Details", "StudentDetails", "Administrator", new { id = item.ID }, new { @class = "btn btn-info" })
-                                @Html.ActionLink("Delete", "DeleteStudent", "Administrator", new { id = item.ID }, new { @class = "btn btn-danger" })
+                                @using (Html.BeginForm("DeleteStudent", "Administrator", new { id = item.ID }, FormMethod.Post))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to deactivate this student?');">
+                                        Delete
+                                    </button>
+                                }
+
                             </div>
                         </td>
                     </tr>

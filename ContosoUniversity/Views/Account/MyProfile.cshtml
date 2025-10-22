@@ -47,9 +47,17 @@
                         <div class="col-md-6">
                             <label class="form-label">All Roles</label>
                             <div class="form-control bg-light">
-                                @foreach (var role in Model.Roles.GetRoles())
+                                @if (Model.IsAdministrator)
                                 {
-                                    <span class="badge bg-secondary me-1">@role</span>
+                                    <span class="badge bg-danger me-1">Administrator</span>
+                                }
+                                @if (Model.IsInstructor)
+                                {
+                                    <span class="badge bg-warning me-1">Instructor</span>
+                                }
+                                @if (Model.IsStudent)
+                                {
+                                    <span class="badge bg-info me-1">Student</span>
                                 }
                             </div>
                         </div>

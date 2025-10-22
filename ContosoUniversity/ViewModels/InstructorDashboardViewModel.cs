@@ -15,8 +15,7 @@ namespace ContosoUniversity.ViewModels
         [Display(Name = "Active Courses")]
         public int ActiveCourses { get; set; }
 
-        [Display(Name = "Upcoming Deadlines")]
-        public List<string> UpcomingDeadlines { get; set; }
+    
 
         [Display(Name = "Recent Enrollments")]
         public List<Enrollment> RecentEnrollments { get; set; }
@@ -26,7 +25,6 @@ namespace ContosoUniversity.ViewModels
 
         public InstructorDashboardViewModel()
         {
-            UpcomingDeadlines = new List<string>();
             RecentEnrollments = new List<Enrollment>();
         }
 

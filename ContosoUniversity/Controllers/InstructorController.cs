@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.Data.Entity.Validation;
 using System.Linq;
 using System.Web.Mvc;
 using ContosoUniversity.Models;
@@ -13,285 +14,361 @@ namespace ContosoUniversity.Controllers
         // GET: Instructor/Dashboard
         public ActionResult Dashboard()
         {
-            RequireRole(Person.UserRole.Instructor);
-
-            var instructor = db.Instructors
-                .Where(i => !i.IsDeleted) // Filter deleted instructors
-                .Include(i => i.Courses.Select(c => c.Department))
-                .Include(i => i.Courses.Select(c => c.Enrollments.Select(e => e.Student)))
-                .Include(i => i.Courses.Select(c => c.Instructors))
-                .Include(i => i.OfficeAssignment)
-                .First(i => i.ID == CurrentUser.ID);
-
-            var viewModel = new InstructorDashboardViewModel
+            try
             {
-                Instructor = instructor,
-                TotalStudents = instructor.Courses
-                    .Where(c => !c.IsDeleted) // Filter deleted courses
-                    .Sum(c => c.Enrollments.Count(e => !e.Student.IsDeleted)), // Filter deleted students
-                ActiveCourses = instructor.Courses
-                    .Where(c => !c.IsDeleted && c.IsActive) // Filter deleted courses
-                    .Count(),
-                UpcomingDeadlines = GetUpcomingDeadlines(instructor),
-                RecentEnrollments = GetRecentEnrollments(instructor),
-                CoursesNeedingGrades = GetCoursesNeedingGrades(instructor)
-            };
+                RequireRole(Person.UserRole.Instructor);
 
-            return View(viewModel);
-        }
+                var instructor = db.Instructors
+                    .Where(i => !i.IsDeleted)
+                    .Include(i => i.Courses.Select(c => c.Department))
+                    .Include(i => i.Courses.Select(c => c.Enrollments.Select(e => e.Student)))
+                    .Include(i => i.Courses.Select(c => c.Instructors))
+                    .Include(i => i.OfficeAssignment)
+                    .First(i => i.ID == CurrentUser.ID);
 
-        private List<string> GetUpcomingDeadlines(Instructor instructor)
-        {
-            var deadlines = new List<string>();
+                var viewModel = new InstructorDashboardViewModel
+                {
+                    Instructor = instructor,
+                    TotalStudents = instructor.Courses
+                        .Where(c => !c.IsDeleted)
+                        .Sum(c => c.Enrollments.Count(e => !e.Student.IsDeleted)),
+                    ActiveCourses = instructor.Courses
+                        .Where(c => !c.IsDeleted && c.IsActive)
+                        .Count(),
+                    RecentEnrollments = GetRecentEnrollments(instructor),
+                    CoursesNeedingGrades = GetCoursesNeedingGrades(instructor)
+                };
 
-            var coursesWithUpcomingWork = instructor.Courses
-                .Where(c => !c.IsDeleted && c.IsActive && c.Enrollments.Count(e => !e.Student.IsDeleted) > 0) // Filter deleted courses and students
-                .ToList();
-
-            foreach (var course in coursesWithUpcomingWork.Take(3))
-            {
-                deadlines.Add($"{course.Title}: Assignment due Friday");
+                return View(viewModel);
             }
-
-            return deadlines;
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = $"Error loading dashboard: {ex.Message}";
+                return View("Error");
+            }
         }
+
 
         private List<Enrollment> GetRecentEnrollments(Instructor instructor)
         {
-            return db.Enrollments
-                .Include(e => e.Student)
-                .Include(e => e.Course.Department)
-                .Include(e => e.Course.Instructors)
-                .Where(e => e.Course.Instructors.Any(i => i.ID == instructor.ID && !i.IsDeleted) && // Filter deleted instructors
-                           !e.Course.IsDeleted && !e.Student.IsDeleted && !e.Course.Department.IsDeleted) // Filter deleted courses, students, and departments
-                .OrderByDescending(e => e.EnrollmentID)
-                .Take(5)
-                .ToList();
+            try
+            {
+                return db.Enrollments
+                    .Include(e => e.Student)
+                    .Include(e => e.Course.Department)
+                    .Include(e => e.Course.Instructors)
+                    .Where(e => e.Course.Instructors.Any(i => i.ID == instructor.ID && !i.IsDeleted) &&
+                               !e.Course.IsDeleted && !e.Student.IsDeleted && !e.Course.Department.IsDeleted)
+                    .OrderByDescending(e => e.EnrollmentID)
+                    .Take(5)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                ViewBag.WarningMessage = $"Error retrieving recent enrollments: {ex.Message}";
+                return new List<Enrollment>();
+            }
         }
 
         private int GetCoursesNeedingGrades(Instructor instructor)
         {
-            return instructor.Courses
-                .Where(c => !c.IsDeleted && c.IsActive) // Filter deleted courses
-                .Count(c => c.Enrollments.Any(e => !e.Grade.HasValue && !e.Student.IsDeleted)); // Filter deleted students
+            try
+            {
+                return instructor.Courses
+                    .Where(c => !c.IsDeleted && c.IsActive)
+                    .Count(c => c.Enrollments.Any(e => !e.Grade.HasValue && !e.Student.IsDeleted));
+            }
+            catch (Exception ex)
+            {
+                ViewBag.WarningMessage = $"Error counting courses needing grades: {ex.Message}";
+                return 0;
+            }
         }
 
         // GET: Instructor/MyCourses
         public ActionResult MyCourses(string status)
         {
-            RequireRole(Person.UserRole.Instructor);
-
-            var instructor = db.Instructors
-                .Where(i => !i.IsDeleted) // Filter deleted instructors
-                .Include(i => i.Courses.Select(c => c.Department))
-                .Include(i => i.Courses.Select(c => c.Enrollments.Select(e => e.Student)))
-                .Include(i => i.Courses.Select(c => c.Instructors))
-                .First(i => i.ID == CurrentUser.ID);
-
-            var courses = instructor.Courses
-                .Where(c => !c.IsDeleted && !c.Department.IsDeleted) // Filter deleted courses and departments
-                .AsQueryable();
-
-            if (!string.IsNullOrEmpty(status))
+            try
             {
-                switch (status)
+                RequireRole(Person.UserRole.Instructor);
+
+                var instructor = db.Instructors
+                    .Where(i => !i.IsDeleted)
+                    .Include(i => i.Courses.Select(c => c.Department))
+                    .Include(i => i.Courses.Select(c => c.Enrollments.Select(e => e.Student)))
+                    .Include(i => i.Courses.Select(c => c.Instructors))
+                    .First(i => i.ID == CurrentUser.ID);
+
+                var courses = instructor.Courses
+                    .Where(c => !c.IsDeleted && !c.Department.IsDeleted)
+                    .AsQueryable();
+
+                if (!string.IsNullOrEmpty(status))
                 {
-                    case "active":
-                        courses = courses.Where(c => c.IsActive);
-                        break;
-                    case "inactive":
-                        courses = courses.Where(c => !c.IsActive);
-                        break;
-                    case "full":
-                        courses = courses.Where(c => c.Enrollments.Count(e => !e.Student.IsDeleted) >= c.Capacity); // Filter deleted students
-                        break;
-                    default:
-                        // No filter applied
-                        break;
+                    switch (status)
+                    {
+                        case "active":
+                            courses = courses.Where(c => c.IsActive);
+                            break;
+                        case "inactive":
+                            courses = courses.Where(c => !c.IsActive);
+                            break;
+                        case "full":
+                            courses = courses.Where(c => c.Enrollments.Count(e => !e.Student.IsDeleted) >= c.Capacity);
+                            break;
+                        default:
+                            break;
+                    }
                 }
+
+                ViewBag.StatusFilter = new SelectList(new[]
+                {
+                    new { Value = "", Text = "All Courses" },
+                    new { Value = "active", Text = "Active" },
+                    new { Value = "inactive", Text = "Inactive" },
+                    new { Value = "full", Text = "Full" }
+                }, "Value", "Text", status);
+
+                return View(courses.OrderBy(c => c.CourseID).ToList());
             }
-
-            ViewBag.StatusFilter = new SelectList(new[]
+            catch (Exception ex)
             {
-                new { Value = "", Text = "All Courses" },
-                new { Value = "active", Text = "Active" },
-                new { Value = "inactive", Text = "Inactive" },
-                new { Value = "full", Text = "Full" }
-            }, "Value", "Text", status);
-
-            return View(courses.OrderBy(c => c.CourseID).ToList());
+                ViewBag.ErrorMessage = $"Error loading courses: {ex.Message}";
+                return View(new List<Course>());
+            }
         }
 
         // GET: Instructor/CourseDetails/5
         public ActionResult CourseDetails(int? id)
         {
-            RequireRole(Person.UserRole.Instructor);
-
-            if (id == null)
+            try
             {
-                return new HttpStatusCodeResult(System.Net.HttpStatusCode.BadRequest);
+                RequireRole(Person.UserRole.Instructor);
+
+                if (id == null)
+                {
+                    ViewBag.ErrorMessage = "Course ID is required";
+                    return new HttpStatusCodeResult(System.Net.HttpStatusCode.BadRequest);
+                }
+
+                var course = db.Courses
+                    .Where(c => !c.IsDeleted && !c.Department.IsDeleted)
+                    .Include(c => c.Department)
+                    .Include(c => c.Instructors)
+                    .Include(c => c.Instructors.Select(i => i.OfficeAssignment))
+                    .Include(c => c.Enrollments.Select(e => e.Student))
+                    .FirstOrDefault(c => c.CourseID == id &&
+                                       c.Instructors.Any(i => i.ID == CurrentUser.ID && !i.IsDeleted));
+
+                if (course == null)
+                {
+                    ViewBag.ErrorMessage = "Course not found or you don't have permission to access it";
+                    return HttpNotFound();
+                }
+
+                return View(course);
             }
-
-            var course = db.Courses
-                .Where(c => !c.IsDeleted && !c.Department.IsDeleted) // Filter deleted courses and departments
-                .Include(c => c.Department)
-                .Include(c => c.Instructors)
-                .Include(c => c.Instructors.Select(i => i.OfficeAssignment))
-                .Include(c => c.Enrollments.Select(e => e.Student))
-                .FirstOrDefault(c => c.CourseID == id &&
-                                   c.Instructors.Any(i => i.ID == CurrentUser.ID && !i.IsDeleted)); // Filter deleted instructors
-
-            if (course == null)
+            catch (Exception ex)
             {
-                return HttpNotFound();
+                ViewBag.ErrorMessage = $"Error loading course details: {ex.Message}";
+                return View("Error");
             }
-
-            return View(course);
         }
 
         // GET: Instructor/CourseStudents/5
         public ActionResult CourseStudents(int? id)
         {
-            RequireRole(Person.UserRole.Instructor);
-
-            if (id == null)
+            try
             {
-                return new HttpStatusCodeResult(System.Net.HttpStatusCode.BadRequest);
+                RequireRole(Person.UserRole.Instructor);
+
+                if (id == null)
+                {
+                    ViewBag.ErrorMessage = "Course ID is required";
+                    return new HttpStatusCodeResult(System.Net.HttpStatusCode.BadRequest);
+                }
+
+                var course = db.Courses
+                    .Where(c => !c.IsDeleted && !c.Department.IsDeleted)
+                    .Include(c => c.Department)
+                    .Include(c => c.Instructors)
+                    .Include(c => c.Enrollments.Select(e => e.Student))
+                    .FirstOrDefault(c => c.CourseID == id &&
+                                       c.Instructors.Any(i => i.ID == CurrentUser.ID && !i.IsDeleted));
+
+                if (course == null)
+                {
+                    ViewBag.ErrorMessage = "Course not found or you don't have permission to access it";
+                    return HttpNotFound();
+                }
+
+                return View(course);
             }
-
-            var course = db.Courses
-                .Where(c => !c.IsDeleted && !c.Department.IsDeleted) // Filter deleted courses and departments
-                .Include(c => c.Department)
-                .Include(c => c.Instructors)
-                .Include(c => c.Enrollments.Select(e => e.Student))
-                .FirstOrDefault(c => c.CourseID == id &&
-                                   c.Instructors.Any(i => i.ID == CurrentUser.ID && !i.IsDeleted)); // Filter deleted instructors
-
-            if (course == null)
+            catch (Exception ex)
             {
-                return HttpNotFound();
+                ViewBag.ErrorMessage = $"Error loading course students: {ex.Message}";
+                return View("Error");
             }
-
-            return View(course);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult UpdateGrade(int enrollmentId, Grade grade)
         {
-            RequireRole(Person.UserRole.Instructor);
-
-            var enrollment = db.Enrollments
-                .Where(e => !e.Student.IsDeleted && !e.Course.IsDeleted) // Filter deleted students and courses
-                .Include(e => e.Student)
-                .Include(e => e.Course)
-                .FirstOrDefault(e => e.EnrollmentID == enrollmentId);
-
-            if (enrollment == null)
+            try
             {
-                TempData["Error"] = "Enrollment not found";
+                RequireRole(Person.UserRole.Instructor);
+
+                var enrollment = db.Enrollments
+                    .Where(e => !e.Student.IsDeleted && !e.Course.IsDeleted)
+                    .Include(e => e.Student)
+                    .Include(e => e.Course)
+                    .FirstOrDefault(e => e.EnrollmentID == enrollmentId);
+
+                if (enrollment == null)
+                {
+                    TempData["Error"] = "Enrollment not found";
+                    return RedirectToAction("MyCourses");
+                }
+
+                var course = db.Courses
+                    .Where(c => !c.IsDeleted)
+                    .Include(c => c.Instructors)
+                    .First(c => c.CourseID == enrollment.CourseID);
+
+                if (!course.Instructors.Any(i => i.ID == CurrentUser.ID && !i.IsDeleted))
+                {
+                    TempData["Error"] = "Not authorized to grade this course";
+                    return RedirectToAction("MyCourses");
+                }
+
+                enrollment.Grade = grade;
+                db.SaveChanges();
+
+                TempData["Success"] = $"Grade updated successfully for {enrollment.Student.FullName}";
+                return RedirectToAction("CourseStudents", new { id = course.CourseID });
+            }
+            catch (DbEntityValidationException ex)
+            {
+                var errorMessages = ex.EntityValidationErrors
+                    .SelectMany(x => x.ValidationErrors)
+                    .Select(x => x.ErrorMessage);
+                var fullErrorMessage = string.Join("; ", errorMessages);
+                TempData["Error"] = $"Validation error: {fullErrorMessage}";
                 return RedirectToAction("MyCourses");
             }
-
-            var course = db.Courses
-                .Where(c => !c.IsDeleted) // Filter deleted courses
-                .Include(c => c.Instructors)
-                .First(c => c.CourseID == enrollment.CourseID);
-
-            // Verify the instructor teaches this course and is not deleted
-            if (!course.Instructors.Any(i => i.ID == CurrentUser.ID && !i.IsDeleted))
+            catch (Exception ex)
             {
-                TempData["Error"] = "Not authorized to grade this course";
+                TempData["Error"] = $"Error updating grade: {ex.Message}";
                 return RedirectToAction("MyCourses");
             }
-
-            enrollment.Grade = grade;
-            db.SaveChanges();
-
-            TempData["Success"] = $"Grade updated successfully for {enrollment.Student.FullName}";
-            return RedirectToAction("CourseStudents", new { id = course.CourseID });
         }
 
         // GET: Instructor/MySchedule
         public ActionResult MySchedule()
         {
-            RequireRole(Person.UserRole.Instructor);
+            try
+            {
+                RequireRole(Person.UserRole.Instructor);
 
-            var instructor = db.Instructors
-                .Where(i => !i.IsDeleted) // Filter deleted instructors
-                .Include(i => i.Courses.Select(c => c.Department))
-                .Include(i => i.Courses.Select(c => c.Instructors))
-                .Include(i => i.Courses.Select(c => c.Enrollments))
-                .First(i => i.ID == CurrentUser.ID);
+                var instructor = db.Instructors
+                    .Where(i => !i.IsDeleted)
+                    .Include(i => i.Courses.Select(c => c.Department))
+                    .Include(i => i.Courses.Select(c => c.Instructors))
+                    .Include(i => i.Courses.Select(c => c.Enrollments))
+                    .First(i => i.ID == CurrentUser.ID);
 
-            return View(instructor.Courses
-                .Where(c => !c.IsDeleted && c.IsActive && !c.Department.IsDeleted) // Filter deleted courses and departments
-                .ToList());
+                var courses = instructor.Courses
+                    .Where(c => !c.IsDeleted && c.IsActive && !c.Department.IsDeleted)
+                    .ToList();
+
+                return View(courses);
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = $"Error loading schedule: {ex.Message}";
+                return View(new List<Course>());
+            }
         }
 
         // GET: Instructor/StudentSearch
         public ActionResult StudentSearch(string searchString)
         {
-            RequireRole(Person.UserRole.Instructor);
-
-            var instructor = db.Instructors
-                .Where(i => !i.IsDeleted) // Filter deleted instructors
-                .Include(i => i.Courses.Select(c => c.Enrollments.Select(e => e.Student)))
-                .First(i => i.ID == CurrentUser.ID);
-
-            var students = instructor.Courses
-                .Where(c => !c.IsDeleted) // Filter deleted courses
-                .SelectMany(c => c.Enrollments)
-                .Where(e => !e.Student.IsDeleted) // Filter deleted students
-                .Select(e => e.Student)
-                .Distinct();
-
-            if (!string.IsNullOrEmpty(searchString))
+            try
             {
-                students = students.Where(s =>
-                    s.FirstMidName.Contains(searchString) ||
-                    s.LastName.Contains(searchString) ||
-                    s.UserName.Contains(searchString));
-            }
+                RequireRole(Person.UserRole.Instructor);
 
-            ViewBag.SearchString = searchString;
-            return View(students.ToList());
+                var instructor = db.Instructors
+                    .Where(i => !i.IsDeleted)
+                    .Include(i => i.Courses.Select(c => c.Enrollments.Select(e => e.Student)))
+                    .First(i => i.ID == CurrentUser.ID);
+
+                var students = instructor.Courses
+                    .Where(c => !c.IsDeleted)
+                    .SelectMany(c => c.Enrollments)
+                    .Where(e => !e.Student.IsDeleted)
+                    .Select(e => e.Student)
+                    .Distinct();
+
+                if (!string.IsNullOrEmpty(searchString))
+                {
+                    students = students.Where(s =>
+                        s.FirstMidName.Contains(searchString) ||
+                        s.LastName.Contains(searchString) ||
+                        s.UserName.Contains(searchString));
+                }
+
+                ViewBag.SearchString = searchString;
+                return View(students.ToList());
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = $"Error searching students: {ex.Message}";
+                return View(new List<Student>());
+            }
         }
 
         // GET: Instructor/Gradebook
         public ActionResult Gradebook(int? courseId)
         {
-            RequireRole(Person.UserRole.Instructor);
-
-            var instructor = db.Instructors
-                .Where(i => !i.IsDeleted) // Filter deleted instructors
-                .Include(i => i.Courses.Select(c => c.Department))
-                .Include(i => i.Courses.Select(c => c.Enrollments.Select(e => e.Student)))
-                .First(i => i.ID == CurrentUser.ID);
-
-            // Get selected course or first course (filtering deleted courses and departments)
-            var selectedCourse = courseId.HasValue
-                ? instructor.Courses.FirstOrDefault(c => c.CourseID == courseId && !c.IsDeleted && !c.Department.IsDeleted)
-                : instructor.Courses.FirstOrDefault(c => !c.IsDeleted && !c.Department.IsDeleted);
-
-            if (selectedCourse == null)
+            try
             {
-                TempData["Error"] = "No courses found";
-                return RedirectToAction("Dashboard");
+                RequireRole(Person.UserRole.Instructor);
+
+                var instructor = db.Instructors
+                    .Where(i => !i.IsDeleted)
+                    .Include(i => i.Courses.Select(c => c.Department))
+                    .Include(i => i.Courses.Select(c => c.Enrollments.Select(e => e.Student)))
+                    .First(i => i.ID == CurrentUser.ID);
+
+                var selectedCourse = courseId.HasValue
+                    ? instructor.Courses.FirstOrDefault(c => c.CourseID == courseId && !c.IsDeleted && !c.Department.IsDeleted)
+                    : instructor.Courses.FirstOrDefault(c => !c.IsDeleted && !c.Department.IsDeleted);
+
+                if (selectedCourse == null)
+                {
+                    TempData["Error"] = "No courses found";
+                    return RedirectToAction("Dashboard");
+                }
+
+                var viewModel = new InstructorGradebookViewModel
+                {
+                    Courses = instructor.Courses
+                        .Where(c => !c.IsDeleted && !c.Department.IsDeleted)
+                        .ToList(),
+                    SelectedCourse = selectedCourse,
+                    Enrollments = selectedCourse.Enrollments
+                        .Where(e => !e.Student.IsDeleted)
+                        .ToList()
+                };
+
+                return View(viewModel);
             }
-
-            var viewModel = new InstructorGradebookViewModel
+            catch (Exception ex)
             {
-                Courses = instructor.Courses
-                    .Where(c => !c.IsDeleted && !c.Department.IsDeleted) // Filter deleted courses and departments
-                    .ToList(),
-                SelectedCourse = selectedCourse,
-                Enrollments = selectedCourse.Enrollments
-                    .Where(e => !e.Student.IsDeleted) // Filter deleted students
-                    .ToList()
-            };
-
-            return View(viewModel);
+                ViewBag.ErrorMessage = $"Error loading gradebook: {ex.Message}";
+                return View("Error");
+            }
         }
 
         // POST: Instructor/UpdateMultipleGrades
@@ -299,29 +376,50 @@ namespace ContosoUniversity.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult UpdateMultipleGrades(Dictionary<int, Grade> grades)
         {
-            RequireRole(Person.UserRole.Instructor);
-
             try
             {
-                foreach (var gradeEntry in grades)
-                {
-                    var enrollment = db.Enrollments
-                        .Where(e => !e.Student.IsDeleted && !e.Course.IsDeleted) // Filter deleted students and courses
-                        .Include(e => e.Course.Instructors)
-                        .FirstOrDefault(e => e.EnrollmentID == gradeEntry.Key);
+                RequireRole(Person.UserRole.Instructor);
 
-                    if (enrollment != null && enrollment.Course.Instructors.Any(i => i.ID == CurrentUser.ID && !i.IsDeleted))
+                using (var transaction = db.Database.BeginTransaction())
+                {
+                    try
                     {
-                        enrollment.Grade = gradeEntry.Value;
+                        foreach (var gradeEntry in grades)
+                        {
+                            var enrollment = db.Enrollments
+                                .Where(e => !e.Student.IsDeleted && !e.Course.IsDeleted)
+                                .Include(e => e.Course.Instructors)
+                                .FirstOrDefault(e => e.EnrollmentID == gradeEntry.Key);
+
+                            if (enrollment != null && enrollment.Course.Instructors.Any(i => i.ID == CurrentUser.ID && !i.IsDeleted))
+                            {
+                                enrollment.Grade = gradeEntry.Value;
+                            }
+                        }
+
+                        db.SaveChanges();
+                        transaction.Commit();
+
+                        TempData["Success"] = "Grades updated successfully";
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        throw;
                     }
                 }
-
-                db.SaveChanges();
-                TempData["Success"] = "Grades updated successfully";
+            }
+            catch (DbEntityValidationException ex)
+            {
+                var errorMessages = ex.EntityValidationErrors
+                    .SelectMany(x => x.ValidationErrors)
+                    .Select(x => x.ErrorMessage);
+                var fullErrorMessage = string.Join("; ", errorMessages);
+                TempData["Error"] = $"Validation error while updating grades: {fullErrorMessage}";
             }
             catch (Exception ex)
             {
-                TempData["Error"] = "An error occurred while updating grades " + ex;
+                TempData["Error"] = $"An error occurred while updating grades: {ex.Message}";
             }
 
             return RedirectToAction("Gradebook");
@@ -329,11 +427,18 @@ namespace ContosoUniversity.Controllers
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
+            try
             {
-                db.Dispose();
+                if (disposing)
+                {
+                    db.Dispose();
+                }
+                base.Dispose(disposing);
             }
-            base.Dispose(disposing);
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error disposing controller: {ex.Message}");
+            }
         }
     }
 }

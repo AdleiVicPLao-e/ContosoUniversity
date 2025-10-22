@@ -10,6 +10,7 @@ namespace ContosoUniversity.Models
         public int DepartmentID { get; set; }
 
         [StringLength(50, MinimumLength = 3)]
+        [Index(IsUnique = true)]
         public string Name { get; set; }
 
         [DataType(DataType.Currency)]
@@ -24,7 +25,6 @@ namespace ContosoUniversity.Models
         [Timestamp]
         public byte[] RowVersion { get; set; }
 
-        // Changed to AdministratorID
         public int? AdministratorID { get; set; }
 
         [ForeignKey("AdministratorID")]
@@ -33,12 +33,11 @@ namespace ContosoUniversity.Models
         public virtual ICollection<Course> Courses { get; set; }
 
         private bool deleted;
-        // 🧱 Soft delete flag — protected so only controller/service can modify
         [ScaffoldColumn(false)]
         public bool IsDeleted
         {
             get => deleted;
-            set => deleted = value; // only controller or derived class can change
+            set => deleted = value;
         }
     }
 }

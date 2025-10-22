@@ -29,5 +29,15 @@ namespace ContosoUniversity.ViewModels
 
         [Display(Name = "Primary Role")]
         public Person.UserRole PrimaryRole { get; set; }
+
+        // Add these boolean properties for the view
+        [Display(Name = "Is Administrator")]
+        public bool IsAdministrator => (Roles & Person.UserRole.Administrator) == Person.UserRole.Administrator;
+
+        [Display(Name = "Is Instructor")]
+        public bool IsInstructor => (Roles & Person.UserRole.Instructor) == Person.UserRole.Instructor;
+
+        [Display(Name = "Is Student")]
+        public bool IsStudent => (Roles & Person.UserRole.Student) == Person.UserRole.Student;
     }
 }

@@ -96,7 +96,6 @@ namespace ContosoUniversity.Controllers
             }
             catch (Exception ex)
             {
-                // Log the exception
                 System.Diagnostics.Debug.WriteLine($"Login error: {ex.Message}");
                 ModelState.AddModelError("", "An error occurred during login. Please try again.");
                 return View();
@@ -193,6 +192,8 @@ namespace ContosoUniversity.Controllers
                 LastName = person.LastName,
                 Roles = person.Roles,
                 PrimaryRole = person.PrimaryRole
+                // The boolean properties (IsAdministrator, IsInstructor, IsStudent) 
+                // are computed automatically from the Roles property
             };
 
             return View(viewModel);

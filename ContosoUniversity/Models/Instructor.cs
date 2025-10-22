@@ -12,7 +12,6 @@ namespace ContosoUniversity.Models
         [Display(Name = "Hire Date")]
         public DateTime HireDate { get; set; }
 
-        // Instructor-specific properties
         [StringLength(50)]
         public string Specialization { get; set; }
 
@@ -23,7 +22,6 @@ namespace ContosoUniversity.Models
         public virtual ICollection<Course> Courses { get; set; }
         public virtual OfficeAssignment OfficeAssignment { get; set; }
 
-        // Constructor to automatically add Instructor role
         public Instructor()
         {
             AddRole(UserRole.Instructor);
