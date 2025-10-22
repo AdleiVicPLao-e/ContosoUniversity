@@ -17,36 +17,76 @@ namespace ContosoUniversity.DAL
             // Create administrators FIRST since departments now reference them
             var administrators = new List<Administrator>
             {
-                new Administrator { FirstMidName = "Admin", LastName = "User",
-                    UserName = "admin", Password = "password123",
+                new Administrator {
+                    FirstMidName = "Admin",
+                    LastName = "User",
+                    UserName = "admin",
+                    Password = "password123",
                     AdministratorSince = DateTime.Parse("2010-01-01"),
                     AdministrativeLevel = "SuperAdmin",
-                    CanManageUsers = true, CanManageSystem = true,
-                    CanViewReports = true, CanManageAllDepartments = true },
-                new Administrator { FirstMidName = "Department", LastName = "Head",
-                    UserName = "deptadmin", Password = "password123",
+                    CanManageUsers = true,
+                    CanManageSystem = true,
+                    CanViewReports = true,
+                    CanManageAllDepartments = true,
+                    IsDeleted = false,
+                    IsLoggedIn = false
+                },
+                new Administrator {
+                    FirstMidName = "Department",
+                    LastName = "Head",
+                    UserName = "deptadmin",
+                    Password = "password123",
                     AdministratorSince = DateTime.Parse("2015-06-01"),
                     AdministrativeLevel = "DepartmentAdmin",
-                    CanManageUsers = false, CanManageSystem = false,
-                    CanViewReports = true, CanManageAllDepartments = false },
-                new Administrator { FirstMidName = "Engineering", LastName = "Admin",
-                    UserName = "engadmin", Password = "password123",
+                    CanManageUsers = false,
+                    CanManageSystem = false,
+                    CanViewReports = true,
+                    CanManageAllDepartments = false,
+                    IsDeleted = false,
+                    IsLoggedIn = false
+                },
+                new Administrator {
+                    FirstMidName = "Engineering",
+                    LastName = "Admin",
+                    UserName = "engadmin",
+                    Password = "password123",
                     AdministratorSince = DateTime.Parse("2018-03-15"),
                     AdministrativeLevel = "DepartmentAdmin",
-                    CanManageUsers = false, CanManageSystem = false,
-                    CanViewReports = true, CanManageAllDepartments = false },
-                new Administrator { FirstMidName = "English", LastName = "Admin",
-                    UserName = "engladmin", Password = "password123",
+                    CanManageUsers = false,
+                    CanManageSystem = false,
+                    CanViewReports = true,
+                    CanManageAllDepartments = false,
+                    IsDeleted = false,
+                    IsLoggedIn = false
+                },
+                new Administrator {
+                    FirstMidName = "English",
+                    LastName = "Admin",
+                    UserName = "engladmin",
+                    Password = "password123",
                     AdministratorSince = DateTime.Parse("2019-08-20"),
                     AdministrativeLevel = "DepartmentAdmin",
-                    CanManageUsers = false, CanManageSystem = false,
-                    CanViewReports = true, CanManageAllDepartments = false },
-                new Administrator { FirstMidName = "Science", LastName = "Admin",
-                    UserName = "sciadmin", Password = "password123",
+                    CanManageUsers = false,
+                    CanManageSystem = false,
+                    CanViewReports = true,
+                    CanManageAllDepartments = false,
+                    IsDeleted = false,
+                    IsLoggedIn = false
+                },
+                new Administrator {
+                    FirstMidName = "Science",
+                    LastName = "Admin",
+                    UserName = "sciadmin",
+                    Password = "password123",
                     AdministratorSince = DateTime.Parse("2020-01-10"),
                     AdministrativeLevel = "DepartmentAdmin",
-                    CanManageUsers = false, CanManageSystem = false,
-                    CanViewReports = true, CanManageAllDepartments = false }
+                    CanManageUsers = false,
+                    CanManageSystem = false,
+                    CanViewReports = true,
+                    CanManageAllDepartments = false,
+                    IsDeleted = false,
+                    IsLoggedIn = false
+                }
             };
             administrators.ForEach(a => context.Administrators.Add(a));
             context.SaveChanges();
@@ -58,31 +98,36 @@ namespace ContosoUniversity.DAL
                     Name = "Engineering",
                     Budget = 350000,
                     StartDate = DateTime.Parse("2007-09-01"),
-                    AdministratorID = administrators[2].ID // Engineering Admin
+                    AdministratorID = administrators[2].ID, // Engineering Admin
+                    IsDeleted = false
                 },
                 new Department {
                     Name = "English",
                     Budget = 120000,
                     StartDate = DateTime.Parse("2007-09-01"),
-                    AdministratorID = administrators[3].ID // English Admin
+                    AdministratorID = administrators[3].ID, // English Admin
+                    IsDeleted = false
                 },
                 new Department {
                     Name = "Economics",
                     Budget = 200000,
                     StartDate = DateTime.Parse("2007-09-01"),
-                    AdministratorID = administrators[1].ID // Department Head
+                    AdministratorID = administrators[1].ID, // Department Head
+                    IsDeleted = false
                 },
                 new Department {
                     Name = "Mathematics",
                     Budget = 250000,
                     StartDate = DateTime.Parse("2007-09-01"),
-                    AdministratorID = administrators[0].ID // Super Admin
+                    AdministratorID = administrators[0].ID, // Super Admin
+                    IsDeleted = false
                 },
                 new Department {
                     Name = "Chemistry",
                     Budget = 180000,
                     StartDate = DateTime.Parse("2008-09-01"),
-                    AdministratorID = administrators[4].ID // Science Admin
+                    AdministratorID = administrators[4].ID, // Science Admin
+                    IsDeleted = false
                 }
             };
             departments.ForEach(d => context.Departments.Add(d));
@@ -91,21 +136,61 @@ namespace ContosoUniversity.DAL
             // Create instructors
             var instructors = new List<Instructor>
             {
-                new Instructor { FirstMidName = "Kim", LastName = "Abercrombie",
-                    HireDate = DateTime.Parse("1995-03-11"), UserName = "kim.abercrombie", Password = "password123",
-                    Specialization = "Computer Science", Salary = 75000m },
-                new Instructor { FirstMidName = "Fadi", LastName = "Fakhouri",
-                    HireDate = DateTime.Parse("2002-07-06"), UserName = "fadi.fakhouri", Password = "password123",
-                    Specialization = "Software Engineering", Salary = 80000m },
-                new Instructor { FirstMidName = "Roger", LastName = "Harui",
-                    HireDate = DateTime.Parse("1998-07-01"), UserName = "roger.harui", Password = "password123",
-                    Specialization = "Economics", Salary = 70000m },
-                new Instructor { FirstMidName = "Candace", LastName = "Kapoor",
-                    HireDate = DateTime.Parse("2001-01-15"), UserName = "candace.kapoor", Password = "password123",
-                    Specialization = "Mathematics", Salary = 72000m },
-                new Instructor { FirstMidName = "Roger", LastName = "Zheng",
-                    HireDate = DateTime.Parse("2004-02-12"), UserName = "roger.zheng", Password = "password123",
-                    Specialization = "Chemistry", Salary = 68000m }
+                new Instructor {
+                    FirstMidName = "Kim",
+                    LastName = "Abercrombie",
+                    HireDate = DateTime.Parse("1995-03-11"),
+                    UserName = "kim.abercrombie",
+                    Password = "password123",
+                    Specialization = "Computer Science",
+                    Salary = 75000m,
+                    IsDeleted = false,
+                    IsLoggedIn = false
+                },
+                new Instructor {
+                    FirstMidName = "Fadi",
+                    LastName = "Fakhouri",
+                    HireDate = DateTime.Parse("2002-07-06"),
+                    UserName = "fadi.fakhouri",
+                    Password = "password123",
+                    Specialization = "Software Engineering",
+                    Salary = 80000m,
+                    IsDeleted = false,
+                    IsLoggedIn = false
+                },
+                new Instructor {
+                    FirstMidName = "Roger",
+                    LastName = "Harui",
+                    HireDate = DateTime.Parse("1998-07-01"),
+                    UserName = "roger.harui",
+                    Password = "password123",
+                    Specialization = "Economics",
+                    Salary = 70000m,
+                    IsDeleted = false,
+                    IsLoggedIn = false
+                },
+                new Instructor {
+                    FirstMidName = "Candace",
+                    LastName = "Kapoor",
+                    HireDate = DateTime.Parse("2001-01-15"),
+                    UserName = "candace.kapoor",
+                    Password = "password123",
+                    Specialization = "Mathematics",
+                    Salary = 72000m,
+                    IsDeleted = false,
+                    IsLoggedIn = false
+                },
+                new Instructor {
+                    FirstMidName = "Roger",
+                    LastName = "Zheng",
+                    HireDate = DateTime.Parse("2004-02-12"),
+                    UserName = "roger.zheng",
+                    Password = "password123",
+                    Specialization = "Chemistry",
+                    Salary = 68000m,
+                    IsDeleted = false,
+                    IsLoggedIn = false
+                }
             };
             instructors.ForEach(i => context.Instructors.Add(i));
             context.SaveChanges();
@@ -113,22 +198,86 @@ namespace ContosoUniversity.DAL
             // Create students with usernames and passwords
             var students = new List<Student>
             {
-                new Student{FirstMidName="Carson", LastName="Alexander", UserName="carson.alexander", Password="password123",
-                    EnrollmentDate=DateTime.Parse("2005-09-01"), StudentCode="S10001"},
-                new Student{FirstMidName="Meredith", LastName="Alonso", UserName="meredith.alonso", Password="password123",
-                    EnrollmentDate=DateTime.Parse("2002-09-01"), StudentCode="S10002"},
-                new Student{FirstMidName="Arturo", LastName="Anand", UserName="arturo.anand", Password="password123",
-                    EnrollmentDate=DateTime.Parse("2003-09-01"), StudentCode="S10003"},
-                new Student{FirstMidName="Gytis", LastName="Barzdukas", UserName="gytis.barzdukas", Password="password123",
-                    EnrollmentDate=DateTime.Parse("2002-09-01"), StudentCode="S10004"},
-                new Student{FirstMidName="Yan", LastName="Li", UserName="yan.li", Password="password123",
-                    EnrollmentDate=DateTime.Parse("2002-09-01"), StudentCode="S10005"},
-                new Student{FirstMidName="Peggy", LastName="Justice", UserName="peggy.justice", Password="password123",
-                    EnrollmentDate=DateTime.Parse("2001-09-01"), StudentCode="S10006"},
-                new Student{FirstMidName="Laura", LastName="Norman", UserName="laura.norman", Password="password123",
-                    EnrollmentDate=DateTime.Parse("2003-09-01"), StudentCode="S10007"},
-                new Student{FirstMidName="Nino", LastName="Olivetto", UserName="nino.olivetto", Password="password123",
-                    EnrollmentDate=DateTime.Parse("2005-09-01"), StudentCode="S10008"}
+                new Student{
+                    FirstMidName="Carson",
+                    LastName="Alexander",
+                    UserName="carson.alexander",
+                    Password="password123",
+                    EnrollmentDate=DateTime.Parse("2005-09-01"),
+                    StudentCode="S10001",
+                    IsDeleted = false,
+                    IsLoggedIn = false
+                },
+                new Student{
+                    FirstMidName="Meredith",
+                    LastName="Alonso",
+                    UserName="meredith.alonso",
+                    Password="password123",
+                    EnrollmentDate=DateTime.Parse("2002-09-01"),
+                    StudentCode="S10002",
+                    IsDeleted = false,
+                    IsLoggedIn = false
+                },
+                new Student{
+                    FirstMidName="Arturo",
+                    LastName="Anand",
+                    UserName="arturo.anand",
+                    Password="password123",
+                    EnrollmentDate=DateTime.Parse("2003-09-01"),
+                    StudentCode="S10003",
+                    IsDeleted = false,
+                    IsLoggedIn = false
+                },
+                new Student{
+                    FirstMidName="Gytis",
+                    LastName="Barzdukas",
+                    UserName="gytis.barzdukas",
+                    Password="password123",
+                    EnrollmentDate=DateTime.Parse("2002-09-01"),
+                    StudentCode="S10004",
+                    IsDeleted = false,
+                    IsLoggedIn = false
+                },
+                new Student{
+                    FirstMidName="Yan",
+                    LastName="Li",
+                    UserName="yan.li",
+                    Password="password123",
+                    EnrollmentDate=DateTime.Parse("2002-09-01"),
+                    StudentCode="S10005",
+                    IsDeleted = false,
+                    IsLoggedIn = false
+                },
+                new Student{
+                    FirstMidName="Peggy",
+                    LastName="Justice",
+                    UserName="peggy.justice",
+                    Password="password123",
+                    EnrollmentDate=DateTime.Parse("2001-09-01"),
+                    StudentCode="S10006",
+                    IsDeleted = false,
+                    IsLoggedIn = false
+                },
+                new Student{
+                    FirstMidName="Laura",
+                    LastName="Norman",
+                    UserName="laura.norman",
+                    Password="password123",
+                    EnrollmentDate=DateTime.Parse("2003-09-01"),
+                    StudentCode="S10007",
+                    IsDeleted = false,
+                    IsLoggedIn = false
+                },
+                new Student{
+                    FirstMidName="Nino",
+                    LastName="Olivetto",
+                    UserName="nino.olivetto",
+                    Password="password123",
+                    EnrollmentDate=DateTime.Parse("2005-09-01"),
+                    StudentCode="S10008",
+                    IsDeleted = false,
+                    IsLoggedIn = false
+                }
             };
             students.ForEach(s => context.Students.Add(s));
             context.SaveChanges();
@@ -136,24 +285,96 @@ namespace ContosoUniversity.DAL
             // Create courses with enhanced properties
             var courses = new List<Course>
             {
-                new Course{CourseID=1050, Title="Chemistry", Credits=3, Capacity=30, IsActive=true,
-                    Description="Introduction to chemical principles and laboratory techniques", DepartmentID=departments[4].DepartmentID},
-                new Course{CourseID=4022, Title="Microeconomics", Credits=3, Capacity=25, IsActive=true,
-                    Description="Study of individual economic behavior and market structures", DepartmentID=departments[2].DepartmentID},
-                new Course{CourseID=4041, Title="Macroeconomics", Credits=3, Capacity=25, IsActive=true,
-                    Description="Analysis of aggregate economic activity and policy", DepartmentID=departments[2].DepartmentID},
-                new Course{CourseID=1045, Title="Calculus", Credits=4, Capacity=35, IsActive=true,
-                    Description="Differential and integral calculus with applications", DepartmentID=departments[3].DepartmentID},
-                new Course{CourseID=3141, Title="Trigonometry", Credits=4, Capacity=30, IsActive=true,
-                    Description="Trigonometric functions and their applications", DepartmentID=departments[3].DepartmentID},
-                new Course{CourseID=2021, Title="Composition", Credits=3, Capacity=20, IsActive=true,
-                    Description="Fundamentals of effective writing and communication", DepartmentID=departments[1].DepartmentID},
-                new Course{CourseID=2042, Title="Literature", Credits=4, Capacity=20, IsActive=true,
-                    Description="Survey of major literary works and critical analysis", DepartmentID=departments[1].DepartmentID},
-                new Course{CourseID=5010, Title="Computer Science", Credits=4, Capacity=40, IsActive=true,
-                    Description="Introduction to programming and algorithms", DepartmentID=departments[0].DepartmentID},
-                new Course{CourseID=5020, Title="Database Systems", Credits=3, Capacity=25, IsActive=true,
-                    Description="Design and implementation of database systems", DepartmentID=departments[0].DepartmentID}
+                new Course{
+                    CourseID=1050,
+                    Title="Chemistry",
+                    Credits=3,
+                    Capacity=30,
+                    IsActive=true,
+                    Description="Introduction to chemical principles and laboratory techniques",
+                    DepartmentID=departments[4].DepartmentID,
+                    IsDeleted = false
+                },
+                new Course{
+                    CourseID=4022,
+                    Title="Microeconomics",
+                    Credits=3,
+                    Capacity=25,
+                    IsActive=true,
+                    Description="Study of individual economic behavior and market structures",
+                    DepartmentID=departments[2].DepartmentID,
+                    IsDeleted = false
+                },
+                new Course{
+                    CourseID=4041,
+                    Title="Macroeconomics",
+                    Credits=3,
+                    Capacity=25,
+                    IsActive=true,
+                    Description="Analysis of aggregate economic activity and policy",
+                    DepartmentID=departments[2].DepartmentID,
+                    IsDeleted = false
+                },
+                new Course{
+                    CourseID=1045,
+                    Title="Calculus",
+                    Credits=4,
+                    Capacity=35,
+                    IsActive=true,
+                    Description="Differential and integral calculus with applications",
+                    DepartmentID=departments[3].DepartmentID,
+                    IsDeleted = false
+                },
+                new Course{
+                    CourseID=3141,
+                    Title="Trigonometry",
+                    Credits=4,
+                    Capacity=30,
+                    IsActive=true,
+                    Description="Trigonometric functions and their applications",
+                    DepartmentID=departments[3].DepartmentID,
+                    IsDeleted = false
+                },
+                new Course{
+                    CourseID=2021,
+                    Title="Composition",
+                    Credits=3,
+                    Capacity=20,
+                    IsActive=true,
+                    Description="Fundamentals of effective writing and communication",
+                    DepartmentID=departments[1].DepartmentID,
+                    IsDeleted = false
+                },
+                new Course{
+                    CourseID=2042,
+                    Title="Literature",
+                    Credits=4,
+                    Capacity=20,
+                    IsActive=true,
+                    Description="Survey of major literary works and critical analysis",
+                    DepartmentID=departments[1].DepartmentID,
+                    IsDeleted = false
+                },
+                new Course{
+                    CourseID=5010,
+                    Title="Computer Science",
+                    Credits=4,
+                    Capacity=40,
+                    IsActive=true,
+                    Description="Introduction to programming and algorithms",
+                    DepartmentID=departments[0].DepartmentID,
+                    IsDeleted = false
+                },
+                new Course{
+                    CourseID=5020,
+                    Title="Database Systems",
+                    Credits=3,
+                    Capacity=25,
+                    IsActive=true,
+                    Description="Design and implementation of database systems",
+                    DepartmentID=departments[0].DepartmentID,
+                    IsDeleted = false
+                }
             };
             courses.ForEach(c => context.Courses.Add(c));
             context.SaveChanges();
@@ -215,7 +436,9 @@ namespace ContosoUniversity.DAL
                 Password = "password123",
                 HireDate = DateTime.Parse("2010-01-01"),
                 Specialization = "Computer Science",
-                Salary = 65000m
+                Salary = 65000m,
+                IsDeleted = false,
+                IsLoggedIn = false
             };
             context.Instructors.Add(testInstructor);
             context.SaveChanges();
@@ -227,7 +450,9 @@ namespace ContosoUniversity.DAL
                 UserName = "student",
                 Password = "password123",
                 EnrollmentDate = DateTime.Parse("2023-09-01"),
-                StudentCode = "S99999"
+                StudentCode = "S99999",
+                IsDeleted = false,
+                IsLoggedIn = false
             };
             context.Students.Add(testStudent);
             context.SaveChanges();

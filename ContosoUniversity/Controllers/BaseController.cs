@@ -18,10 +18,13 @@ namespace ContosoUniversity.Controllers
             // Check if user session exists but user is not logged in database
             if (CurrentUser != null)
             {
-                var currentUserInDb = db.People.Find(CurrentUser.ID);
+                var currentUserInDb = db.People
+                    .Where(p => !p.IsDeleted && p.ID == CurrentUser.ID) // Filter deleted users
+                    .FirstOrDefault();
+
                 if (currentUserInDb == null || !currentUserInDb.IsLoggedIn)
                 {
-                    // User was forcibly logged out or session is invalid
+                    // User was forcibly logged out, deleted, or session is invalid
                     Session.Clear();
                     System.Web.Security.FormsAuthentication.SignOut();
 
@@ -30,6 +33,11 @@ namespace ContosoUniversity.Controllers
                         filterContext.Result = RedirectToAction("Login", "Account");
                         return;
                     }
+                }
+                else
+                {
+                    // Update session with fresh user data (excluding deleted users)
+                    Session["CurrentUser"] = currentUserInDb;
                 }
             }
 
@@ -53,7 +61,7 @@ namespace ContosoUniversity.Controllers
 
         protected void RequireRole(Person.UserRole role)
         {
-            if (CurrentUser == null || !CurrentUser.HasRole(role))
+            if (CurrentUser == null || CurrentUser.IsDeleted || !CurrentUser.HasRole(role)) // Check if user is deleted
             {
                 throw new HttpException(403, "Access denied");
             }
@@ -61,7 +69,7 @@ namespace ContosoUniversity.Controllers
 
         protected void RequireAnyRole(params Person.UserRole[] roles)
         {
-            if (CurrentUser == null || !roles.Any(role => CurrentUser.HasRole(role)))
+            if (CurrentUser == null || CurrentUser.IsDeleted || !roles.Any(role => CurrentUser.HasRole(role))) // Check if user is deleted
             {
                 throw new HttpException(403, "Access denied");
             }
@@ -69,9 +77,12 @@ namespace ContosoUniversity.Controllers
 
         protected bool IsUserLoggedInElsewhere()
         {
-            if (CurrentUser == null) return false;
+            if (CurrentUser == null || CurrentUser.IsDeleted) return false; // Check if user is deleted
 
-            var currentUserInDb = db.People.Find(CurrentUser.ID);
+            var currentUserInDb = db.People
+                .Where(p => !p.IsDeleted && p.ID == CurrentUser.ID) // Filter deleted users
+                .FirstOrDefault();
+
             return currentUserInDb != null && currentUserInDb.IsLoggedIn &&
                    !LoginManager.IsUserSessionValid(CurrentUser.ID, Session.SessionID);
         }
@@ -89,7 +100,7 @@ namespace ContosoUniversity.Controllers
         protected override void OnActionExecuted(ActionExecutedContext filterContext)
         {
             // Check for concurrent logins on every request (except anonymous)
-            if (CurrentUser != null && !AllowAnonymous(new ActionExecutingContext
+            if (CurrentUser != null && !CurrentUser.IsDeleted && !AllowAnonymous(new ActionExecutingContext // Check if user is deleted
             {
                 ActionDescriptor = filterContext.ActionDescriptor,
                 Controller = filterContext.Controller

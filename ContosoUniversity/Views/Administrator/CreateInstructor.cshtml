@@ -1,0 +1,132 @@
+﻿@model ContosoUniversity.Models.Instructor
+
+@{
+    ViewBag.Title = "Create Instructor";
+}
+
+<div class="container py-4">
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-person-plus me-2"></i>Create New Instructor
+                    </h4>
+                </div>
+                <div class="card-body">
+                    @using (Html.BeginForm("CreateInstructor", "Administrator", FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.ValidationSummary(true, "", new { @class = "text-danger mb-3" })
+
+                        <div class="row g-3">
+                            <div class="col-md-6 form-floating">
+                                @Html.EditorFor(model => model.FirstMidName, new { htmlAttributes = new { @class = "form-control", placeholder = "First Name" } })
+                                @Html.LabelFor(model => model.FirstMidName, "First Name")
+                                @Html.ValidationMessageFor(model => model.FirstMidName, "", new { @class = "text-danger" })
+                            </div>
+                            <div class="col-md-6 form-floating">
+                                @Html.EditorFor(model => model.LastName, new { htmlAttributes = new { @class = "form-control", placeholder = "Last Name" } })
+                                @Html.LabelFor(model => model.LastName, "Last Name")
+                                @Html.ValidationMessageFor(model => model.LastName, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-3">
+                            <div class="col-md-6 form-floating">
+                                @Html.EditorFor(model => model.UserName, new { htmlAttributes = new { @class = "form-control", placeholder = "Username" } })
+                                @Html.LabelFor(model => model.UserName, "Username")
+                                @Html.ValidationMessageFor(model => model.UserName, "", new { @class = "text-danger" })
+                            </div>
+                            <div class="col-md-6 form-floating">
+                                @Html.PasswordFor(model => model.Password, new { @class = "form-control", placeholder = "Password", value = Model?.Password })
+                                @Html.LabelFor(model => model.Password, "Password")
+                                @Html.ValidationMessageFor(model => model.Password, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-3">
+                            <div class="col-md-6 form-floating">
+                                @Html.EditorFor(model => model.HireDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                                @Html.LabelFor(model => model.HireDate, "Hire Date")
+                                @Html.ValidationMessageFor(model => model.HireDate, "", new { @class = "text-danger" })
+                            </div>
+                            <div class="col-md-6 form-floating">
+                                @Html.EditorFor(model => model.Specialization, new { htmlAttributes = new { @class = "form-control", placeholder = "Specialization" } })
+                                @Html.LabelFor(model => model.Specialization, "Specialization")
+                                @Html.ValidationMessageFor(model => model.Specialization, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-3">
+                            <div class="col-md-6 form-floating">
+                                @Html.EditorFor(model => model.Salary, new { htmlAttributes = new { @class = "form-control", placeholder = "0.00", type = "number", step = "0.01", min = "0" } })
+                                @Html.LabelFor(model => model.Salary, "Salary")
+                                @Html.ValidationMessageFor(model => model.Salary, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <div class="mt-4 d-flex gap-2">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle me-2"></i>Create Instructor
+                            </button>
+                            <a href="@Url.Action("ManageInstructors", "Administrator")" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Back to List
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Instructor Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Required Fields:</strong></p>
+                    <ul class="small text-muted">
+                        <li>First Name</li>
+                        <li>Last Name</li>
+                        <li>Username</li>
+                        <li>Password</li>
+                        <li>Hire Date</li>
+                    </ul>
+
+                    <p class="mt-3"><strong>Default Settings:</strong></p>
+                    <ul class="small text-muted">
+                        <li>Instructor role assigned automatically</li>
+                        <li>Account active by default</li>
+                        <li>Not logged in initially</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h6><i class="bi bi-lightbulb me-2"></i>Quick Tips</h6>
+                    <ul class="small text-muted mb-0">
+                        <li><i class="bi bi-dot"></i> Username must be unique</li>
+                        <li><i class="bi bi-dot"></i> Password encrypted automatically</li>
+                        <li><i class="bi bi-dot"></i> Instructor can be assigned courses later</li>
+                        <li><i class="bi bi-dot"></i> Office assignment can be added later</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script>
+        $(document).ready(function () {
+            $('#HireDate').val(new Date().toISOString().split('T')[0]);
+            $('#Salary').on('blur', function() {
+                var value = parseFloat($(this).val());
+                if (!isNaN(value)) $(this).val(value.toFixed(2));
+            });
+        });
+    </script>
+}

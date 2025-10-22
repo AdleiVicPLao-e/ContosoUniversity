@@ -23,84 +23,116 @@ namespace ContosoUniversity.Controllers
             {
                 var viewModel = new AdminDashboardViewModel
                 {
-                    TotalStudents = db.Students.Count(),
-                    TotalInstructors = db.Instructors.Count(),
-                    TotalCourses = db.Courses.Count(),
-                    TotalDepartments = db.Departments.Count(),
-                    NewEnrollmentsThisMonth = db.Enrollments.Count(e => e.EnrollmentID > 0),
-                    ActiveCourses = db.Courses.Count(c => c.Enrollments.Count > 0),
+                    // 📊 Filter out deleted students/instructors/courses/departments
+                    TotalStudents = db.Students.Count(s => !s.IsDeleted),
+                    TotalInstructors = db.Instructors.Count(i => !i.IsDeleted),
+                    TotalCourses = db.Courses.Count(c => !c.IsDeleted),
+                    TotalDepartments = db.Departments.Count(d => !d.IsDeleted),
+
+                    // Filter deleted enrollments if applicable
+                    NewEnrollmentsThisMonth = db.Enrollments
+                        .Count(e => e.EnrollmentID > 0 &&
+                                   !e.Student.IsDeleted &&
+                                   !e.Course.IsDeleted),
+
+                    ActiveCourses = db.Courses
+                        .Where(c => !c.IsDeleted && c.Enrollments.Count > 0)
+                        .Count(),
+
                     RecentEnrollments = db.Enrollments
                         .Include(e => e.Student)
-                        .Include(e => e.Course.Department) // Include Course Department
-                        .Include(e => e.Course.Instructors) // Include Course Instructors
+                        .Include(e => e.Course.Department)
+                        .Include(e => e.Course.Instructors)
+                        .Where(e =>
+                            !e.Course.IsDeleted &&
+                            !e.Student.IsDeleted &&
+                            !e.Course.Department.IsDeleted)
                         .OrderByDescending(e => e.EnrollmentID)
                         .Take(10)
                         .ToList(),
+
                     RecentCourses = db.Courses
                         .Include(c => c.Department)
-                        .Include(c => c.Instructors) // Include Instructors
-                        .Include(c => c.Enrollments) // Include Enrollments
+                        .Include(c => c.Instructors)
+                        .Include(c => c.Enrollments)
+                        .Where(c => !c.IsDeleted && !c.Department.IsDeleted)
                         .OrderByDescending(c => c.CourseID)
                         .Take(5)
                         .ToList(),
+
                     ShowQuickActions = true
                 };
 
-                // Fix DepartmentStatistics with null checks and eager loading
+                // 🏛 Department Statistics
                 var departments = db.Departments
-                    .Include(d => d.Courses.Select(c => c.Enrollments)) // Include Courses and Enrollments
-                    .Include(d => d.Administrator) // Include Administrator
-                    .Include(d => d.Courses.Select(c => c.Instructors)) // Include Course Instructors
+                    .Include(d => d.Courses.Select(c => c.Enrollments))
+                    .Include(d => d.Administrator)
+                    .Include(d => d.Courses.Select(c => c.Instructors))
+                    .Where(d => !d.IsDeleted)
                     .ToList();
 
                 viewModel.DepartmentStatistics = departments.Select(d => new DepartmentStats
                 {
                     DepartmentName = d?.Name ?? "Unknown Department",
-                    TotalCourses = d?.Courses?.Count ?? 0,
-                    TotalStudents = d?.Courses?.Sum(c => c?.Enrollments?.Count ?? 0) ?? 0,
-                    TotalInstructors = db.Instructors
-                        .Include(i => i.Courses.Select(c => c.Department)) // Include Instructor Courses and Departments
-                        .Count(i => i.Courses.Any(c => c.DepartmentID == d.DepartmentID)),
-                    BudgetUtilization = (d?.Budget ?? 0) > 0 ?
-                        ((d?.Courses?.Sum(c => (c?.Credits ?? 0) * 1000m) ?? 0) / (d?.Budget ?? 1m)) : 0m,
-                    DepartmentHead = d?.Administrator != null ?
-                        $"{d.Administrator.FirstMidName} {d.Administrator.LastName}".Trim() : "Not Assigned"
-                }).ToList();
+                    TotalCourses = d?.Courses?.Count(c => !c.IsDeleted) ?? 0,
+                    TotalStudents = d?.Courses?
+                        .Where(c => !c.IsDeleted)
+                        .Sum(c => c?.Enrollments?
+                            .Count(e => e.Student != null && !e.Student.IsDeleted) ?? 0) ?? 0,
+                                    TotalInstructors = db.Instructors
+                        .Include(i => i.Courses.Select(c => c.Department))
+                        .Count(i => !i.IsDeleted &&
+                                    i.Courses.Any(c => !c.IsDeleted &&
+                                                       c.DepartmentID == d.DepartmentID)),
+                                    BudgetUtilization = (d?.Budget ?? 0) > 0
+                        ? ((d?.Courses?.Where(c => !c.IsDeleted)
+                                .Sum(c => (c?.Credits ?? 0) * 1000m) ?? 0)
+                            / (d?.Budget ?? 1m))
+                        : 0m,
+                                    DepartmentHead = d?.Administrator != null && !d.Administrator.IsDeleted
+                        ? $"{d.Administrator.FirstMidName} {d.Administrator.LastName}".Trim()
+                        : "Not Assigned"
+                    }).ToList();
 
-                // Fix PopularCourses with null checks and eager loading
+
+                // 📚 Popular Courses
                 var courses = db.Courses
                     .Include(c => c.Department)
-                    .Include(c => c.Instructors.Select(i => i.OfficeAssignment)) // Include Instructors and OfficeAssignment
-                    .Include(c => c.Enrollments.Select(e => e.Student)) // Include Enrollments and Students
+                    .Include(c => c.Instructors.Select(i => i.OfficeAssignment))
+                    .Include(c => c.Enrollments.Select(e => e.Student))
+                    .Where(c => !c.IsDeleted && !c.Department.IsDeleted)
                     .ToList();
 
                 viewModel.PopularCourses = courses.Select(c => new CourseEnrollmentStats
                 {
                     CourseTitle = c?.Title ?? "Unknown Course",
                     CourseCode = c != null ? $"CS{c.CourseID}" : "CS0",
-                    EnrolledStudents = c?.Enrollments?.Count ?? 0,
+                    EnrolledStudents = c?.Enrollments?.Count(e => !e.Student.IsDeleted) ?? 0,
                     Capacity = c?.Capacity ?? 0,
-                    InstructorName = c?.Instructors?.FirstOrDefault() != null ?
-                        $"{c.Instructors.First().FirstMidName} {c.Instructors.First().LastName}".Trim() : "Not Assigned",
+                    InstructorName = c?.Instructors?.FirstOrDefault(i => !i.IsDeleted) != null
+                        ? $"{c.Instructors.First(i => !i.IsDeleted).FirstMidName} {c.Instructors.First(i => !i.IsDeleted).LastName}".Trim()
+                        : "Not Assigned",
                     DepartmentName = c?.Department?.Name ?? "No Department"
                 })
                 .OrderByDescending(c => c.EnrolledStudents)
                 .Take(5)
                 .ToList();
 
-                // Fix InstructorWorkload with null checks and eager loading
+                // 🧑‍🏫 Instructor Workload
                 var instructors = db.Instructors
                     .Include(i => i.OfficeAssignment)
-                    .Include(i => i.Courses.Select(c => c.Department)) // Include Courses and Departments
-                    .Include(i => i.Courses.Select(c => c.Enrollments.Select(e => e.Student))) // Include Courses, Enrollments, and Students
+                    .Include(i => i.Courses.Select(c => c.Department))
+                    .Include(i => i.Courses.Select(c => c.Enrollments.Select(e => e.Student)))
+                    .Where(i => !i.IsDeleted)
                     .ToList();
 
                 viewModel.InstructorWorkload = instructors.Select(i => new InstructorStats
                 {
                     InstructorName = i != null ? $"{i.FirstMidName} {i.LastName}".Trim() : "Unknown Instructor",
-                    DepartmentName = i?.Courses?.FirstOrDefault()?.Department?.Name ?? "Not Assigned",
-                    CoursesTeaching = i?.Courses?.Count ?? 0,
-                    TotalStudents = i?.Courses?.Sum(c => c?.Enrollments?.Count ?? 0) ?? 0,
+                    DepartmentName = i?.Courses?.FirstOrDefault(c => !c.IsDeleted)?.Department?.Name ?? "Not Assigned",
+                    CoursesTeaching = i?.Courses?.Count(c => !c.IsDeleted) ?? 0,
+                    TotalStudents = i?.Courses?.Where(c => !c.IsDeleted)
+                                        .Sum(c => c?.Enrollments?.Count(e => !e.Student.IsDeleted) ?? 0) ?? 0,
                     OfficeLocation = i?.OfficeAssignment?.Location ?? "No Office",
                     HireDate = i?.HireDate ?? DateTime.MinValue
                 })
@@ -113,10 +145,8 @@ namespace ContosoUniversity.Controllers
             }
             catch (Exception ex)
             {
-                // Log the exception
                 System.Diagnostics.Debug.WriteLine($"Dashboard error: {ex.Message}");
 
-                // Return a basic view model without statistics
                 return View(new AdminDashboardViewModel
                 {
                     ShowQuickActions = true,
@@ -134,13 +164,14 @@ namespace ContosoUniversity.Controllers
 
             var courses = db.Courses
                 .Include(c => c.Department)
-                .Include(c => c.Instructors.Select(i => i.OfficeAssignment)) // Include Instructors and OfficeAssignment
-                .Include(c => c.Enrollments.Select(e => e.Student)) // Include Enrollments and Students
+                .Include(c => c.Instructors.Select(i => i.OfficeAssignment))
+                .Include(c => c.Enrollments.Select(e => e.Student))
+                .Where(c => !c.IsDeleted && !c.Department.IsDeleted) // Filter deleted courses and departments
                 .AsQueryable();
 
             if (departmentId.HasValue)
             {
-                courses = courses.Where(c => c.DepartmentID == departmentId.Value);
+                courses = courses.Where(c => c.DepartmentID == departmentId.Value && !c.Department.IsDeleted);
             }
 
             if (!string.IsNullOrEmpty(status))
@@ -155,15 +186,15 @@ namespace ContosoUniversity.Controllers
                 }
                 else if (status == "full")
                 {
-                    courses = courses.Where(c => c.Enrollments.Count >= c.Capacity);
+                    courses = courses.Where(c => c.Enrollments.Count(e => !e.Student.IsDeleted) >= c.Capacity);
                 }
                 else if (status == "low")
                 {
-                    courses = courses.Where(c => c.Enrollments.Count < 5);
+                    courses = courses.Where(c => c.Enrollments.Count(e => !e.Student.IsDeleted) < 5);
                 }
             }
 
-            ViewBag.Departments = new SelectList(db.Departments, "DepartmentID", "Name", departmentId);
+            ViewBag.Departments = new SelectList(db.Departments.Where(d => !d.IsDeleted), "DepartmentID", "Name", departmentId);
             ViewBag.StatusFilter = new SelectList(new[]
             {
                 new { Value = "", Text = "All Status" },
@@ -182,7 +213,8 @@ namespace ContosoUniversity.Controllers
             RequireRole(Person.UserRole.Administrator);
             PopulateDepartmentsDropDownList();
             ViewBag.Instructors = new MultiSelectList(db.Instructors
-                .Include(i => i.OfficeAssignment) // Include OfficeAssignment
+                .Where(i => !i.IsDeleted) // Filter deleted instructors
+                .Include(i => i.OfficeAssignment)
                 .ToList(), "ID", "FullName");
             return View();
         }
@@ -201,8 +233,8 @@ namespace ContosoUniversity.Controllers
                     if (selectedInstructors != null)
                     {
                         course.Instructors = db.Instructors
-                            .Include(i => i.OfficeAssignment) // Include OfficeAssignment
-                            .Where(i => selectedInstructors.Contains(i.ID))
+                            .Where(i => !i.IsDeleted && selectedInstructors.Contains(i.ID)) // Filter deleted instructors
+                            .Include(i => i.OfficeAssignment)
                             .ToList();
                     }
 
@@ -219,7 +251,8 @@ namespace ContosoUniversity.Controllers
 
             PopulateDepartmentsDropDownList(course.DepartmentID);
             ViewBag.Instructors = new MultiSelectList(db.Instructors
-                .Include(i => i.OfficeAssignment) // Include OfficeAssignment
+                .Where(i => !i.IsDeleted) // Filter deleted instructors
+                .Include(i => i.OfficeAssignment)
                 .ToList(), "ID", "FullName", selectedInstructors);
             return View(course);
         }
@@ -235,9 +268,10 @@ namespace ContosoUniversity.Controllers
             }
 
             Course course = db.Courses
-                .Include(c => c.Instructors.Select(i => i.OfficeAssignment)) // Include Instructors and OfficeAssignment
-                .Include(c => c.Department) // Include Department
-                .Include(c => c.Enrollments.Select(e => e.Student)) // Include Enrollments and Students
+                .Include(c => c.Instructors.Select(i => i.OfficeAssignment))
+                .Include(c => c.Department)
+                .Include(c => c.Enrollments.Select(e => e.Student))
+                .Where(c => !c.IsDeleted && !c.Department.IsDeleted) // Filter deleted courses and departments
                 .FirstOrDefault(c => c.CourseID == id);
 
             if (course == null)
@@ -247,9 +281,10 @@ namespace ContosoUniversity.Controllers
 
             PopulateDepartmentsDropDownList(course.DepartmentID);
             ViewBag.Instructors = new MultiSelectList(db.Instructors
-                .Include(i => i.OfficeAssignment) // Include OfficeAssignment
+                .Where(i => !i.IsDeleted) // Filter deleted instructors
+                .Include(i => i.OfficeAssignment)
                 .ToList(), "ID", "FullName",
-                course.Instructors.Select(i => i.ID));
+                course.Instructors.Where(i => !i.IsDeleted).Select(i => i.ID));
             return View(course);
         }
 
@@ -263,8 +298,9 @@ namespace ContosoUniversity.Controllers
             if (ModelState.IsValid)
             {
                 var courseToUpdate = db.Courses
-                    .Include(c => c.Instructors.Select(i => i.OfficeAssignment)) // Include Instructors and OfficeAssignment
-                    .Include(c => c.Department) // Include Department
+                    .Include(c => c.Instructors.Select(i => i.OfficeAssignment))
+                    .Include(c => c.Department)
+                    .Where(c => !c.IsDeleted && !c.Department.IsDeleted) // Filter deleted courses and departments
                     .FirstOrDefault(c => c.CourseID == course.CourseID);
 
                 if (courseToUpdate == null)
@@ -288,7 +324,8 @@ namespace ContosoUniversity.Controllers
 
             PopulateDepartmentsDropDownList(course.DepartmentID);
             ViewBag.Instructors = new MultiSelectList(db.Instructors
-                .Include(i => i.OfficeAssignment) // Include OfficeAssignment
+                .Where(i => !i.IsDeleted) // Filter deleted instructors
+                .Include(i => i.OfficeAssignment)
                 .ToList(), "ID", "FullName", selectedInstructors);
             return View(course);
         }
@@ -305,8 +342,9 @@ namespace ContosoUniversity.Controllers
 
             Course course = db.Courses
                 .Include(c => c.Department)
-                .Include(c => c.Instructors.Select(i => i.OfficeAssignment)) // Include Instructors and OfficeAssignment
-                .Include(c => c.Enrollments.Select(e => e.Student)) // Include Enrollments and Students
+                .Include(c => c.Instructors.Select(i => i.OfficeAssignment))
+                .Include(c => c.Enrollments.Select(e => e.Student))
+                .Where(c => !c.IsDeleted && !c.Department.IsDeleted) // Filter deleted courses and departments
                 .FirstOrDefault(c => c.CourseID == id);
 
             if (course == null)
@@ -328,9 +366,10 @@ namespace ContosoUniversity.Controllers
             }
 
             Course course = db.Courses
-                .Include(c => c.Department) // Include Department
-                .Include(c => c.Instructors.Select(i => i.OfficeAssignment)) // Include Instructors and OfficeAssignment
-                .Include(c => c.Enrollments.Select(e => e.Student)) // Include Enrollments and Students
+                .Include(c => c.Department)
+                .Include(c => c.Instructors.Select(i => i.OfficeAssignment))
+                .Include(c => c.Enrollments.Select(e => e.Student))
+                .Where(c => !c.IsDeleted && !c.Department.IsDeleted) // Filter deleted courses and departments
                 .FirstOrDefault(c => c.CourseID == id);
 
             if (course == null)
@@ -349,13 +388,14 @@ namespace ContosoUniversity.Controllers
             RequireRole(Person.UserRole.Administrator);
 
             Course course = db.Courses
-                .Include(c => c.Instructors) // Include Instructors
-                .Include(c => c.Enrollments) // Include Enrollments
+                .Include(c => c.Instructors)
+                .Include(c => c.Enrollments)
+                .Where(c => !c.IsDeleted) // Only find non-deleted courses
                 .FirstOrDefault(c => c.CourseID == id);
 
             if (course != null)
             {
-                db.Courses.Remove(course);
+                course.IsDeleted = true;
                 db.SaveChanges();
                 TempData["Success"] = "Course deleted successfully";
             }
@@ -370,8 +410,9 @@ namespace ContosoUniversity.Controllers
             RequireRole(Person.UserRole.Administrator);
 
             var course = db.Courses
-                .Include(c => c.Instructors) // Include Instructors
-                .Include(c => c.Enrollments) // Include Enrollments
+                .Include(c => c.Instructors)
+                .Include(c => c.Enrollments)
+                .Where(c => !c.IsDeleted) // Only find non-deleted courses
                 .FirstOrDefault(c => c.CourseID == id);
 
             if (course != null)
@@ -398,7 +439,10 @@ namespace ContosoUniversity.Controllers
 
             if (multiplier != null)
             {
-                ViewBag.RowsAffected = db.Database.ExecuteSqlCommand("UPDATE Course SET Credits = Credits * {0}", multiplier);
+                // Only update non-deleted courses
+                ViewBag.RowsAffected = db.Database.ExecuteSqlCommand(
+                    "UPDATE Course SET Credits = Credits * {0} WHERE IsDeleted = 0",
+                    multiplier);
                 TempData["Success"] = $"{ViewBag.RowsAffected} courses updated";
             }
 
@@ -408,7 +452,8 @@ namespace ContosoUniversity.Controllers
         private void PopulateDepartmentsDropDownList(object selectedDepartment = null)
         {
             var departmentsQuery = db.Departments
-                .Include(d => d.Administrator) // Include Administrator
+                .Where(d => !d.IsDeleted) // Filter deleted departments
+                .Include(d => d.Administrator)
                 .OrderBy(d => d.Name);
             ViewBag.DepartmentID = new SelectList(departmentsQuery, "DepartmentID", "Name", selectedDepartment);
         }
@@ -422,9 +467,10 @@ namespace ContosoUniversity.Controllers
         {
             RequireRole(Person.UserRole.Administrator);
             var departments = db.Departments
-                .Include(d => d.Administrator) // Include Administrator
-                .Include(d => d.Courses.Select(c => c.Instructors)) // Include Courses and Instructors
-                .Include(d => d.Courses.Select(c => c.Enrollments)); // Include Courses and Enrollments
+                .Where(d => !d.IsDeleted) // Filter deleted departments
+                .Include(d => d.Administrator)
+                .Include(d => d.Courses.Select(c => c.Instructors))
+                .Include(d => d.Courses.Select(c => c.Enrollments));
             return View(await departments.ToListAsync());
         }
 
@@ -439,9 +485,10 @@ namespace ContosoUniversity.Controllers
             }
 
             Department department = await db.Departments
-                .Include(d => d.Administrator) // Include Administrator
-                .Include(d => d.Courses.Select(c => c.Instructors.Select(i => i.OfficeAssignment))) // Include Courses, Instructors, and OfficeAssignment
-                .Include(d => d.Courses.Select(c => c.Enrollments.Select(e => e.Student))) // Include Courses, Enrollments, and Students
+                .Where(d => !d.IsDeleted) // Filter deleted departments
+                .Include(d => d.Administrator)
+                .Include(d => d.Courses.Select(c => c.Instructors.Select(i => i.OfficeAssignment)))
+                .Include(d => d.Courses.Select(c => c.Enrollments.Select(e => e.Student)))
                 .FirstOrDefaultAsync(d => d.DepartmentID == id);
 
             if (department == null)
@@ -455,8 +502,9 @@ namespace ContosoUniversity.Controllers
         public ActionResult CreateDepartment()
         {
             RequireRole(Person.UserRole.Administrator);
-            // Updated to use AdministratorID and filter by Administrator role with eager loading
+            // Filter deleted administrators
             ViewBag.AdministratorID = new SelectList(db.Administrators
+                .Where(a => !a.IsDeleted)
                 .ToList(), "ID", "FullName");
             return View();
         }
@@ -477,6 +525,7 @@ namespace ContosoUniversity.Controllers
             }
 
             ViewBag.AdministratorID = new SelectList(db.Administrators
+                .Where(a => !a.IsDeleted) // Filter deleted administrators
                 .ToList(), "ID", "FullName", department.AdministratorID);
             return View(department);
         }
@@ -492,8 +541,9 @@ namespace ContosoUniversity.Controllers
             }
 
             Department department = await db.Departments
-                .Include(d => d.Administrator) // Include Administrator
-                .Include(d => d.Courses) // Include Courses
+                .Where(d => !d.IsDeleted) // Filter deleted departments
+                .Include(d => d.Administrator)
+                .Include(d => d.Courses)
                 .FirstOrDefaultAsync(d => d.DepartmentID == id);
 
             if (department == null)
@@ -501,8 +551,8 @@ namespace ContosoUniversity.Controllers
                 return HttpNotFound();
             }
 
-            // Updated to use AdministratorID with eager loading
             ViewBag.AdministratorID = new SelectList(db.Administrators
+                .Where(a => !a.IsDeleted) // Filter deleted administrators
                 .ToList(), "ID", "FullName", department.AdministratorID);
             return View(department);
         }
@@ -514,7 +564,6 @@ namespace ContosoUniversity.Controllers
         {
             RequireRole(Person.UserRole.Administrator);
 
-            // Updated field list to use AdministratorID
             string[] fieldsToBind = new string[] { "Name", "Budget", "StartDate", "AdministratorID", "RowVersion" };
 
             if (id == null)
@@ -523,8 +572,9 @@ namespace ContosoUniversity.Controllers
             }
 
             var departmentToUpdate = await db.Departments
-                .Include(d => d.Administrator) // Include Administrator
-                .Include(d => d.Courses) // Include Courses
+                .Where(d => !d.IsDeleted) // Filter deleted departments
+                .Include(d => d.Administrator)
+                .Include(d => d.Courses)
                 .FirstOrDefaultAsync(d => d.DepartmentID == id);
 
             if (departmentToUpdate == null)
@@ -534,6 +584,7 @@ namespace ContosoUniversity.Controllers
                 ModelState.AddModelError(string.Empty,
                     "Unable to save changes. The department was deleted by another user.");
                 ViewBag.AdministratorID = new SelectList(db.Administrators
+                    .Where(a => !a.IsDeleted) // Filter deleted administrators
                     .ToList(), "ID", "FullName", deletedDepartment.AdministratorID);
                 return View(deletedDepartment);
             }
@@ -571,6 +622,7 @@ namespace ContosoUniversity.Controllers
                         {
                             var adminName = databaseValues.AdministratorID.HasValue ?
                                 db.Administrators
+                                    .Where(a => !a.IsDeleted) // Filter deleted administrators
                                     .FirstOrDefault(a => a.ID == databaseValues.AdministratorID)?.FullName : "None";
                             ModelState.AddModelError("AdministratorID", "Current value: " + adminName);
                         }
@@ -585,6 +637,7 @@ namespace ContosoUniversity.Controllers
                 }
             }
             ViewBag.AdministratorID = new SelectList(db.Administrators
+                .Where(a => !a.IsDeleted) // Filter deleted administrators
                 .ToList(), "ID", "FullName", departmentToUpdate.AdministratorID);
             return View(departmentToUpdate);
         }
@@ -600,9 +653,10 @@ namespace ContosoUniversity.Controllers
             }
 
             Department department = await db.Departments
-                .Include(d => d.Administrator) // Include Administrator
-                .Include(d => d.Courses.Select(c => c.Instructors)) // Include Courses and Instructors
-                .Include(d => d.Courses.Select(c => c.Enrollments)) // Include Courses and Enrollments
+                .Where(d => !d.IsDeleted) // Filter deleted departments
+                .Include(d => d.Administrator)
+                .Include(d => d.Courses.Select(c => c.Instructors))
+                .Include(d => d.Courses.Select(c => c.Enrollments))
                 .FirstOrDefaultAsync(d => d.DepartmentID == id);
 
             if (department == null)
@@ -631,7 +685,7 @@ namespace ContosoUniversity.Controllers
 
             try
             {
-                db.Entry(department).State = EntityState.Deleted;
+                department.IsDeleted = true;
                 await db.SaveChangesAsync();
                 TempData["Success"] = "Department deleted successfully";
                 return RedirectToAction("ManageDepartments");
@@ -652,7 +706,8 @@ namespace ContosoUniversity.Controllers
         {
             RequireRole(Person.UserRole.Administrator);
             var department = db.Departments
-                .Include(d => d.Administrator) // Include Administrator
+                .Where(d => !d.IsDeleted) // Filter deleted departments
+                .Include(d => d.Administrator)
                 .FirstOrDefault(d => d.DepartmentID == departmentId);
 
             if (department != null)
@@ -673,6 +728,7 @@ namespace ContosoUniversity.Controllers
         {
             RequireRole(Person.UserRole.Administrator);
             var users = db.People
+                .Where(p => !p.IsDeleted) // Filter deleted users
                 .ToList();
             return View(users);
         }
@@ -697,8 +753,9 @@ namespace ContosoUniversity.Controllers
             ViewBag.CurrentFilter = searchString;
 
             var students = db.Students
-                .Include(s => s.Enrollments.Select(e => e.Course.Department)) // Include Enrollments, Courses, and Departments
-                .Include(s => s.Enrollments.Select(e => e.Course.Instructors)) // Include Enrollments, Courses, and Instructors
+                .Where(s => !s.IsDeleted) // Filter deleted students
+                .Include(s => s.Enrollments.Select(e => e.Course.Department))
+                .Include(s => s.Enrollments.Select(e => e.Course.Instructors))
                 .AsQueryable();
 
             if (!String.IsNullOrEmpty(searchString))
@@ -743,6 +800,12 @@ namespace ContosoUniversity.Controllers
 
             if (ModelState.IsValid)
             {
+                // Generate StudentCode automatically if not provided
+                if (string.IsNullOrWhiteSpace(student.StudentCode))
+                {
+                    student.StudentCode = GenerateStudentCode();
+                }
+
                 db.Students.Add(student);
                 db.SaveChanges();
                 TempData["Success"] = "Student created successfully";
@@ -751,6 +814,22 @@ namespace ContosoUniversity.Controllers
 
             return View(student);
         }
+
+        // Helper method to generate unique student code
+        private string GenerateStudentCode()
+        {
+            string code;
+            var rnd = new Random();
+
+            do
+            {
+                code = "S" + rnd.Next(10000, 99999); // Example: S12345
+            }
+            while (db.Students.Any(s => s.StudentCode == code)); // Ensure uniqueness
+
+            return code;
+        }
+
 
         // GET: Administrator/StudentDetails/5
         public ActionResult StudentDetails(int? id)
@@ -763,8 +842,9 @@ namespace ContosoUniversity.Controllers
             }
 
             Student student = db.Students
-                .Include(s => s.Enrollments.Select(e => e.Course.Department)) // Include Enrollments, Courses, and Departments
-                .Include(s => s.Enrollments.Select(e => e.Course.Instructors.Select(i => i.OfficeAssignment))) // Include Enrollments, Courses, Instructors, and OfficeAssignment
+                .Where(s => !s.IsDeleted) // Filter deleted students
+                .Include(s => s.Enrollments.Select(e => e.Course.Department))
+                .Include(s => s.Enrollments.Select(e => e.Course.Instructors.Select(i => i.OfficeAssignment)))
                 .FirstOrDefault(s => s.ID == id);
 
             if (student == null)
@@ -776,17 +856,48 @@ namespace ContosoUniversity.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult DeleteStudent(int id)
+        {
+            RequireRole(Person.UserRole.Administrator);
+
+            var student = db.Students
+                .Where(s => !s.IsDeleted) // Only find non-deleted students
+                .FirstOrDefault(s => s.ID == id);
+
+            if (student == null)
+            {
+                return HttpNotFound();
+            }
+
+            student.IsDeleted = true;
+            db.SaveChanges();
+
+            TempData["Success"] = "Student has been deactivated.";
+            return RedirectToAction("ManageStudents");
+        }
+
+        [HttpPost]
         public ActionResult AssignCourseToInstructor(int courseId, int instructorId)
         {
             RequireRole(Person.UserRole.Administrator);
             var course = db.Courses
-                .Include(c => c.Instructors.Select(i => i.OfficeAssignment)) // Include Instructors and OfficeAssignment
-                .First(c => c.CourseID == courseId);
+                .Where(c => !c.IsDeleted) // Filter deleted courses
+                .Include(c => c.Instructors.Select(i => i.OfficeAssignment))
+                .FirstOrDefault(c => c.CourseID == courseId);
+
             var instructor = db.Instructors
-                .Include(i => i.OfficeAssignment) // Include OfficeAssignment
-                .First(i => i.ID == instructorId);
-            course.Instructors.Add(instructor);
-            db.SaveChanges();
+                .Where(i => !i.IsDeleted) // Filter deleted instructors
+                .Include(i => i.OfficeAssignment)
+                .FirstOrDefault(i => i.ID == instructorId);
+
+            if (course != null && instructor != null)
+            {
+                course.Instructors.Add(instructor);
+                db.SaveChanges();
+                TempData["Success"] = "Course assigned to instructor successfully";
+            }
+
             return RedirectToAction("ManageCourses");
         }
 
@@ -817,7 +928,8 @@ namespace ContosoUniversity.Controllers
             }
 
             ViewBag.Departments = new SelectList(db.Departments
-                .Include(d => d.Administrator) // Include Administrator
+                .Where(d => !d.IsDeleted) // Filter deleted departments
+                .Include(d => d.Administrator)
                 .ToList(), "DepartmentID", "Name", departmentFilter);
             return View(viewModel);
         }
@@ -825,9 +937,10 @@ namespace ContosoUniversity.Controllers
         private IEnumerable<Instructor> GetFilteredInstructors(string searchTerm, int? departmentFilter)
         {
             var instructors = db.Instructors
+                .Where(i => !i.IsDeleted) // Filter deleted instructors
                 .Include(i => i.OfficeAssignment)
-                .Include(i => i.Courses.Select(c => c.Department)) // Include Courses and Departments
-                .Include(i => i.Courses.Select(c => c.Enrollments.Select(e => e.Student))) // Include Courses, Enrollments, and Students
+                .Include(i => i.Courses.Select(c => c.Department))
+                .Include(i => i.Courses.Select(c => c.Enrollments.Select(e => e.Student)))
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(searchTerm))
@@ -841,7 +954,7 @@ namespace ContosoUniversity.Controllers
             if (departmentFilter.HasValue)
             {
                 instructors = instructors.Where(i =>
-                    i.Courses.Any(c => c.DepartmentID == departmentFilter.Value));
+                    i.Courses.Any(c => c.DepartmentID == departmentFilter.Value && !c.IsDeleted));
             }
 
             return instructors.OrderBy(i => i.LastName).ToList();
@@ -850,22 +963,24 @@ namespace ContosoUniversity.Controllers
         private IEnumerable<Course> GetInstructorCourses(int instructorID)
         {
             return db.Instructors
-                .Where(i => i.ID == instructorID)
+                .Where(i => i.ID == instructorID && !i.IsDeleted) // Filter deleted instructors
                 .SelectMany(i => i.Courses)
+                .Where(c => !c.IsDeleted) // Filter deleted courses
                 .Include(c => c.Department)
-                .Include(c => c.Enrollments.Select(e => e.Student)) // Include Enrollments and Students
-                .Include(c => c.Instructors.Select(i => i.OfficeAssignment)) // Include Instructors and OfficeAssignment
+                .Include(c => c.Enrollments.Select(e => e.Student))
+                .Include(c => c.Instructors.Select(i => i.OfficeAssignment))
                 .ToList();
         }
 
         private IEnumerable<Enrollment> GetCourseEnrollments(int courseID)
         {
             return db.Courses
-                .Where(c => c.CourseID == courseID)
+                .Where(c => c.CourseID == courseID && !c.IsDeleted) // Filter deleted courses
                 .SelectMany(c => c.Enrollments)
+                .Where(e => !e.Student.IsDeleted) // Filter enrollments with deleted students
                 .Include(e => e.Student)
-                .Include(e => e.Course.Department) // Include Course and Department
-                .Include(e => e.Course.Instructors.Select(i => i.OfficeAssignment)) // Include Course, Instructors, and OfficeAssignment
+                .Include(e => e.Course.Department)
+                .Include(e => e.Course.Instructors.Select(i => i.OfficeAssignment))
                 .ToList();
         }
 
@@ -874,7 +989,8 @@ namespace ContosoUniversity.Controllers
         {
             RequireRole(Person.UserRole.Administrator);
             ViewBag.Departments = new SelectList(db.Departments
-                .Include(d => d.Administrator) // Include Administrator
+                .Where(d => !d.IsDeleted) // Filter deleted departments
+                .Include(d => d.Administrator)
                 .ToList(), "DepartmentID", "Name");
             return View();
         }
@@ -895,7 +1011,8 @@ namespace ContosoUniversity.Controllers
             }
 
             ViewBag.Departments = new SelectList(db.Departments
-                .Include(d => d.Administrator) // Include Administrator
+                .Where(d => !d.IsDeleted) // Filter deleted departments
+                .Include(d => d.Administrator)
                 .ToList(), "DepartmentID", "Name");
             return View(instructor);
         }
@@ -911,8 +1028,9 @@ namespace ContosoUniversity.Controllers
             }
 
             var instructor = db.Instructors
-                .Include(i => i.Courses.Select(c => c.Department)) // Include Courses and Departments
-                .Include(d => d.Courses.Select(c => c.Instructors.Select(ins => ins.OfficeAssignment)))// Include Courses, Instructors, and OfficeAssignment
+                .Where(i => !i.IsDeleted) // Filter deleted instructors
+                .Include(i => i.Courses.Select(c => c.Department))
+                .Include(i => i.Courses.Select(c => c.Instructors.Select(ins => ins.OfficeAssignment)))
                 .FirstOrDefault(i => i.ID == id);
 
             if (instructor == null)
@@ -920,11 +1038,12 @@ namespace ContosoUniversity.Controllers
                 return HttpNotFound();
             }
 
-            var instructorCourses = new HashSet<int>(instructor.Courses.Select(c => c.CourseID));
+            var instructorCourses = new HashSet<int>(instructor.Courses.Where(c => !c.IsDeleted).Select(c => c.CourseID));
             var allCourses = db.Courses
+                .Where(c => !c.IsDeleted) // Filter deleted courses
                 .Include(c => c.Department)
-                .Include(c => c.Instructors.Select(i => i.OfficeAssignment)) // Include Instructors and OfficeAssignment
-                .Include(c => c.Enrollments.Select(e => e.Student)) // Include Enrollments and Students
+                .Include(c => c.Instructors.Select(i => i.OfficeAssignment))
+                .Include(c => c.Enrollments.Select(e => e.Student))
                 .ToList();
 
             var viewModel = new AssignCoursesViewModel
@@ -949,7 +1068,8 @@ namespace ContosoUniversity.Controllers
             RequireRole(Person.UserRole.Administrator);
 
             var instructor = db.Instructors
-                .Include(i => i.Courses.Select(c => c.Department)) // Include Courses and Departments
+                .Where(i => !i.IsDeleted) // Filter deleted instructors
+                .Include(i => i.Courses.Select(c => c.Department))
                 .FirstOrDefault(i => i.ID == id);
 
             if (instructor == null)
@@ -973,11 +1093,12 @@ namespace ContosoUniversity.Controllers
             }
 
             var selectedCoursesHS = new HashSet<int>(selectedCourses);
-            var instructorCourses = new HashSet<int>(instructor.Courses.Select(c => c.CourseID));
+            var instructorCourses = new HashSet<int>(instructor.Courses.Where(c => !c.IsDeleted).Select(c => c.CourseID));
 
             foreach (var course in db.Courses
-                .Include(c => c.Instructors) // Include Instructors
-                .Include(c => c.Department)) // Include Department
+                .Where(c => !c.IsDeleted) // Filter deleted courses
+                .Include(c => c.Instructors)
+                .Include(c => c.Department))
             {
                 if (selectedCoursesHS.Contains(course.CourseID))
                 {
@@ -1003,11 +1124,13 @@ namespace ContosoUniversity.Controllers
             RequireRole(Person.UserRole.Administrator);
 
             var instructor = db.Instructors
-                .Include(i => i.Courses.Select(c => c.Department)) // Include Courses and Departments
+                .Where(i => !i.IsDeleted) // Filter deleted instructors
+                .Include(i => i.Courses.Select(c => c.Department))
                 .FirstOrDefault(i => i.ID == instructorId);
 
             var course = db.Courses
-                .Include(c => c.Instructors) // Include Instructors
+                .Where(c => !c.IsDeleted) // Filter deleted courses
+                .Include(c => c.Instructors)
                 .FirstOrDefault(c => c.CourseID == courseId);
 
             if (instructor != null && course != null)
@@ -1019,6 +1142,29 @@ namespace ContosoUniversity.Controllers
 
             return RedirectToAction("ManageInstructors", new { instructorID = instructorId });
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult DeleteInstructor(int id)
+        {
+            RequireRole(Person.UserRole.Administrator);
+
+            var instructor = db.Instructors
+                .Where(i => !i.IsDeleted) // Only find non-deleted instructors
+                .FirstOrDefault(i => i.ID == id);
+
+            if (instructor == null)
+            {
+                return HttpNotFound();
+            }
+
+            instructor.IsDeleted = true;
+            db.SaveChanges();
+
+            TempData["Success"] = "Instructor has been deactivated (soft deleted).";
+            return RedirectToAction("ManageInstructors");
+        }
+
         #endregion
 
         #region Helper Methods
@@ -1028,9 +1174,11 @@ namespace ContosoUniversity.Controllers
             var alerts = new List<SystemAlert>();
 
             var lowEnrollmentCourses = db.Courses
-                .Include(c => c.Department) // Include Department
-                .Include(c => c.Instructors) // Include Instructors
-                .Where(c => c.Enrollments.Count < 5).ToList();
+                .Where(c => !c.IsDeleted) // Filter deleted courses
+                .Include(c => c.Department)
+                .Include(c => c.Instructors)
+                .Where(c => c.Enrollments.Count(e => !e.Student.IsDeleted) < 5).ToList();
+
             if (lowEnrollmentCourses.Any())
             {
                 alerts.Add(new SystemAlert
@@ -1043,10 +1191,11 @@ namespace ContosoUniversity.Controllers
                 });
             }
 
-            // Updated to check for AdministratorID instead of InstructorID
             var departmentsWithoutHeads = db.Departments
-                .Include(d => d.Administrator) // Include Administrator
+                .Where(d => !d.IsDeleted) // Filter deleted departments
+                .Include(d => d.Administrator)
                 .Where(d => d.AdministratorID == null).ToList();
+
             if (departmentsWithoutHeads.Any())
             {
                 alerts.Add(new SystemAlert
@@ -1060,9 +1209,11 @@ namespace ContosoUniversity.Controllers
             }
 
             var instructorsWithoutCourses = db.Instructors
-                .Include(i => i.OfficeAssignment) // Include OfficeAssignment
-                .Include(i => i.Courses) // Include Courses
-                .Where(i => i.Courses.Count == 0).ToList();
+                .Where(i => !i.IsDeleted) // Filter deleted instructors
+                .Include(i => i.OfficeAssignment)
+                .Include(i => i.Courses)
+                .Where(i => i.Courses.Count(c => !c.IsDeleted) == 0).ToList();
+
             if (instructorsWithoutCourses.Any())
             {
                 alerts.Add(new SystemAlert
@@ -1076,10 +1227,12 @@ namespace ContosoUniversity.Controllers
             }
 
             var overloadedInstructors = db.Instructors
-                .Include(i => i.OfficeAssignment) // Include OfficeAssignment
-                .Include(i => i.Courses.Select(c => c.Enrollments)) // Include Courses and Enrollments
-                .Where(i => i.Courses.Sum(c => c.Enrollments.Count) > 100)
+                .Where(i => !i.IsDeleted) // Filter deleted instructors
+                .Include(i => i.OfficeAssignment)
+                .Include(i => i.Courses.Select(c => c.Enrollments))
+                .Where(i => i.Courses.Where(c => !c.IsDeleted).Sum(c => c.Enrollments.Count(e => !e.Student.IsDeleted)) > 100)
                 .ToList();
+
             if (overloadedInstructors.Any())
             {
                 alerts.Add(new SystemAlert
@@ -1104,11 +1257,12 @@ namespace ContosoUniversity.Controllers
             }
 
             var selectedInstructorsHS = new HashSet<int>(selectedInstructors);
-            var courseInstructors = new HashSet<int>(courseToUpdate.Instructors.Select(i => i.ID));
+            var courseInstructors = new HashSet<int>(courseToUpdate.Instructors.Where(i => !i.IsDeleted).Select(i => i.ID));
 
             foreach (var instructor in db.Instructors
-                .Include(i => i.OfficeAssignment) // Include OfficeAssignment
-                .Include(i => i.Courses)) // Include Courses
+                .Where(i => !i.IsDeleted) // Filter deleted instructors
+                .Include(i => i.OfficeAssignment)
+                .Include(i => i.Courses))
             {
                 if (selectedInstructorsHS.Contains(instructor.ID))
                 {

@@ -220,9 +220,9 @@
     <Compile Include="Helpers\LoginManager.cs" />
     <Compile Include="Logging\ILogger.cs" />
     <Compile Include="Logging\Logger.cs" />
-    <Compile Include="Migrations\202510210700564_InitialCreate.cs" />
-    <Compile Include="Migrations\202510210700564_InitialCreate.Designer.cs">
-      <DependentUpon>202510210700564_InitialCreate.cs</DependentUpon>
+    <Compile Include="Migrations\202510220244127_InitialCreate.cs" />
+    <Compile Include="Migrations\202510220244127_InitialCreate.Designer.cs">
+      <DependentUpon>202510220244127_InitialCreate.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Administrator.cs" />
@@ -236,13 +236,19 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ViewModels\AdminDashboardViewModel.cs" />
     <Compile Include="ViewModels\AssignCoursesViewModal.cs" />
+    <Compile Include="ViewModels\ChangePasswordViewModel.cs" />
     <Compile Include="ViewModels\InstructorDashboardViewModel.cs" />
     <Compile Include="ViewModels\InstructorGradebookViewModel.cs" />
     <Compile Include="ViewModels\InstructorIndexData.cs" />
     <Compile Include="ViewModels\InstructorManagementViewModel.cs" />
+    <Compile Include="ViewModels\ProfileViewModel.cs" />
     <Compile Include="ViewModels\StudentAssignmentViewModel.cs" />
     <Compile Include="ViewModels\StudentProgressViewModel.cs" />
     <Compile Include="ViewModels\StudentTranscriptViewModel.cs" />
+    <None Include="Views\Administrator\CreateInstructor.cshtml" />
+    <None Include="Views\Administrator\CreateStudent.cshtml" />
+    <Content Include="Views\Account\ChangePassword.cshtml" />
+    <None Include="Views\Account\MyProfile.cshtml" />
     <None Include="Views\Administrator\Dashboard.cshtml" />
     <Content Include="Views\Administrator\CreateDepartment.cshtml" />
     <Content Include="Views\Account\Login.cshtml" />
@@ -319,7 +325,7 @@
     <Content Include="Views\Home\Contact.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Views\Instructor\Dashboard.cshtml" />
-    <Content Include="Views\Administrator\ManageInstructor.cshtml" />
+    <Content Include="Views\Administrator\ManageInstructors.cshtml" />
     <Content Include="Views\Administrator\ManageStudents.cshtml" />
     <Content Include="Views\Administrator\StudentDetails.cshtml" />
   </ItemGroup>
@@ -354,8 +360,8 @@
     <Content Include="Scripts\jquery-3.7.0.min.map" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\202510210700564_InitialCreate.resx">
-      <DependentUpon>202510210700564_InitialCreate.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\202510220244127_InitialCreate.resx">
+      <DependentUpon>202510220244127_InitialCreate.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

@@ -18,6 +18,7 @@
                         FirstName = c.String(nullable: false, maxLength: 50),
                         Roles = c.Int(nullable: false),
                         IsLoggedIn = c.Boolean(nullable: false),
+                        IsDeleted = c.Boolean(nullable: false),
                         AdministratorSince = c.DateTime(storeType: "date"),
                         AdministrativeLevel = c.String(maxLength: 50),
                         CanManageUsers = c.Boolean(),
@@ -44,6 +45,7 @@
                         Capacity = c.Int(nullable: false),
                         IsActive = c.Boolean(nullable: false),
                         DepartmentID = c.Int(nullable: false),
+                        IsDeleted = c.Boolean(nullable: false),
                     })
                 .PrimaryKey(t => t.CourseID)
                 .ForeignKey("dbo.Department", t => t.DepartmentID)
@@ -59,6 +61,7 @@
                         StartDate = c.DateTime(nullable: false, storeType: "date"),
                         RowVersion = c.Binary(nullable: false, fixedLength: true, timestamp: true, storeType: "rowversion"),
                         AdministratorID = c.Int(),
+                        IsDeleted = c.Boolean(nullable: false),
                     })
                 .PrimaryKey(t => t.DepartmentID)
                 .ForeignKey("dbo.Person", t => t.AdministratorID)
@@ -111,10 +114,11 @@
                         Budget = p.Decimal(precision: 19, scale: 4, storeType: "money"),
                         StartDate = p.DateTime(storeType: "date"),
                         AdministratorID = p.Int(),
+                        IsDeleted = p.Boolean(),
                     },
                 body:
-                    @"INSERT [dbo].[Department]([Name], [Budget], [StartDate], [AdministratorID])
-                      VALUES (@Name, @Budget, @StartDate, @AdministratorID)
+                    @"INSERT [dbo].[Department]([Name], [Budget], [StartDate], [AdministratorID], [IsDeleted])
+                      VALUES (@Name, @Budget, @StartDate, @AdministratorID, @IsDeleted)
                       
                       DECLARE @DepartmentID int
                       SELECT @DepartmentID = [DepartmentID]
@@ -136,10 +140,11 @@
                         StartDate = p.DateTime(storeType: "date"),
                         RowVersion_Original = p.Binary(maxLength: 8, fixedLength: true, storeType: "rowversion"),
                         AdministratorID = p.Int(),
+                        IsDeleted = p.Boolean(),
                     },
                 body:
                     @"UPDATE [dbo].[Department]
-                      SET [Name] = @Name, [Budget] = @Budget, [StartDate] = @StartDate, [AdministratorID] = @AdministratorID
+                      SET [Name] = @Name, [Budget] = @Budget, [StartDate] = @StartDate, [AdministratorID] = @AdministratorID, [IsDeleted] = @IsDeleted
                       WHERE (([DepartmentID] = @DepartmentID) AND (([RowVersion] = @RowVersion_Original) OR ([RowVersion] IS NULL AND @RowVersion_Original IS NULL)))
                       
                       SELECT t0.[RowVersion]

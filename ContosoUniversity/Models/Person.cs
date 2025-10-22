@@ -1,14 +1,15 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using ContosoUniversity.Helpers;
+﻿using ContosoUniversity.Helpers;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using System.Web.Mvc;
 
 namespace ContosoUniversity.Models
 {
     public abstract class Person
     {
-        // Move enum outside the class for better accessibility
+        // Define user roles as bit flags (outside the class if you prefer global use)
         public enum UserRole
         {
             Student = 1,
@@ -19,26 +20,30 @@ namespace ContosoUniversity.Models
         public int ID { get; set; }
 
         private string username;
+        private string password;
+        private bool deleted;
 
         [Required]
         [StringLength(50)]
         public string UserName
         {
-            get { return username; }
-            set { username = value; }
+            get => username;
+            set => username = value;
         }
 
-        private string password;
-
+        // 🔐 Encrypted value stored in DB
         [Required]
         [Column("EncryptedPassword")]
+        [ScaffoldColumn(false)] // Not displayed in auto forms
         public string EncryptedPassword
         {
             get => password;
             set => password = value;
         }
 
+        // 🔒 Computed password property (NotMapped, decrypted on get)
         [NotMapped]
+        [ScaffoldColumn(false)] // Don’t show this in any auto form
         public string Password
         {
             get => string.IsNullOrEmpty(password)
@@ -64,66 +69,48 @@ namespace ContosoUniversity.Models
         [Display(Name = "Full Name")]
         public string FullName => $"{LastName}, {FirstMidName}";
 
-        // Multi-role support using bit flags
+        // 🧩 Roles with bitwise flags
         [Required]
         public UserRole Roles { get; set; }
 
-        // Track login status to prevent multiple logins
         [Required]
         [Display(Name = "Is Logged In")]
         public bool IsLoggedIn { get; set; } = false;
 
-        // Individual role checkers
-        [NotMapped]
-        public bool IsStudent => HasRole(UserRole.Student);
-        [NotMapped]
-        public bool IsInstructor => HasRole(UserRole.Instructor);
-        [NotMapped]
-        public bool IsAdministrator => HasRole(UserRole.Administrator);
-
-        // Primary role for display/UI purposes
-        [NotMapped]
-        public UserRole PrimaryRole
+        // 🧱 Soft delete flag — protected so only controller/service can modify
+        [ScaffoldColumn(false)]
+        public bool IsDeleted
         {
-            get
-            {
-                if (HasRole(UserRole.Administrator)) return UserRole.Administrator;
-                if (HasRole(UserRole.Instructor)) return UserRole.Instructor;
-                if (HasRole(UserRole.Student)) return UserRole.Student;
-                return UserRole.Student; // default
-            }
+            get => deleted;
+            set => deleted = value; // only controller or derived class can change
         }
 
-        // Role management methods
-        public bool HasRole(UserRole role)
-        {
-            return (Roles & role) == role;
-        }
+        // ✅ Role accessors
+        [NotMapped] public bool IsStudent => HasRole(UserRole.Student);
+        [NotMapped] public bool IsInstructor => HasRole(UserRole.Instructor);
+        [NotMapped] public bool IsAdministrator => HasRole(UserRole.Administrator);
 
-        public void AddRole(UserRole role)
-        {
-            Roles |= role;
-        }
+        [NotMapped]
+        public UserRole PrimaryRole =>
+            HasRole(UserRole.Administrator) ? UserRole.Administrator :
+            HasRole(UserRole.Instructor) ? UserRole.Instructor :
+            HasRole(UserRole.Student) ? UserRole.Student :
+            UserRole.Student;
 
-        public void RemoveRole(UserRole role)
-        {
-            Roles &= ~role;
-        }
-
-        public IEnumerable<UserRole> GetRoles()
-        {
-            return System.Enum.GetValues(typeof(UserRole))
+        // Role helpers
+        public bool HasRole(UserRole role) => (Roles & role) == role;
+        public void AddRole(UserRole role) => Roles |= role;
+        public void RemoveRole(UserRole role) => Roles &= ~role;
+        public IEnumerable<UserRole> GetRoles() =>
+            System.Enum.GetValues(typeof(UserRole))
                 .Cast<UserRole>()
-                .Where(role => HasRole(role));
-        }
+                .Where(HasRole);
 
-        // Login/Logout methods
+        // Login logic
         public bool TryLogin(string enteredPassword)
         {
             if (IsLoggedIn)
-            {
-                return false; // Already logged in elsewhere
-            }
+                return false; // already logged in
 
             if (Password == enteredPassword)
             {
@@ -134,21 +121,10 @@ namespace ContosoUniversity.Models
             return false;
         }
 
-        public void Logout()
-        {
-            IsLoggedIn = false;
-        }
+        public void Logout() => IsLoggedIn = false;
+        public void ForceLogout() => IsLoggedIn = false;
 
-        public void ForceLogout()
-        {
-            IsLoggedIn = false;
-            // You might want to log this action for security purposes
-        }
-
-        // Validation to ensure at least one role is set
-        protected virtual bool ValidateRoles()
-        {
-            return Roles != 0; // At least one role must be set
-        }
+        // Validation
+        protected virtual bool ValidateRoles() => Roles != 0;
     }
 }

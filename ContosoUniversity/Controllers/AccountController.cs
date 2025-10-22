@@ -2,6 +2,7 @@
 using System.Web.Mvc;
 using ContosoUniversity.Models;
 using ContosoUniversity.Helpers;
+using ContosoUniversity.ViewModels;
 using System;
 
 namespace ContosoUniversity.Controllers
@@ -12,7 +13,7 @@ namespace ContosoUniversity.Controllers
         public ActionResult Login()
         {
             // If user is already logged in, redirect to appropriate dashboard
-            if (CurrentUser != null)
+            if (CurrentUser != null && !CurrentUser.IsDeleted) // Check if user is deleted
             {
                 return RedirectToDashboard(CurrentUser);
             }
@@ -31,12 +32,14 @@ namespace ContosoUniversity.Controllers
                     return View();
                 }
 
-                var person = db.People.FirstOrDefault(p => p.UserName == username);
+                var person = db.People
+                    .Where(p => !p.IsDeleted && p.UserName == username) // Filter deleted users
+                    .FirstOrDefault();
 
                 if (person == null)
                 {
-                    // Log failed login attempt (username not found)
-                    System.Diagnostics.Debug.WriteLine($"Failed login attempt - username not found: {username}");
+                    // Log failed login attempt (username not found or user is deleted)
+                    System.Diagnostics.Debug.WriteLine($"Failed login attempt - username not found or deleted: {username}");
                     ModelState.AddModelError("", "Invalid username or password.");
                     return View();
                 }
@@ -109,10 +112,13 @@ namespace ContosoUniversity.Controllers
                 var userId = Session["CurrentUserId"] as int?;
                 var sessionId = Session.SessionID;
 
-                if (CurrentUser != null)
+                if (CurrentUser != null && !CurrentUser.IsDeleted) // Check if user is deleted
                 {
-                    // Update login status in database
-                    var person = db.People.Find(CurrentUser.ID);
+                    // Update login status in database (only if user exists and is not deleted)
+                    var person = db.People
+                        .Where(p => !p.IsDeleted && p.ID == CurrentUser.ID) // Filter deleted users
+                        .FirstOrDefault();
+
                     if (person != null)
                     {
                         person.IsLoggedIn = false;
@@ -159,6 +165,161 @@ namespace ContosoUniversity.Controllers
             }
         }
 
+        // GET: Account/MyProfile
+        [HttpGet]
+        public ActionResult MyProfile()
+        {
+            if (CurrentUser == null || CurrentUser.IsDeleted)
+            {
+                TempData["Error"] = "Please login to access your profile.";
+                return RedirectToAction("Login");
+            }
+
+            var person = db.People
+                .Where(p => !p.IsDeleted && p.ID == CurrentUser.ID)
+                .FirstOrDefault();
+
+            if (person == null)
+            {
+                TempData["Error"] = "User not found.";
+                return RedirectToAction("Login");
+            }
+
+            var viewModel = new ProfileViewModel
+            {
+                ID = person.ID,
+                UserName = person.UserName,
+                FirstMidName = person.FirstMidName,
+                LastName = person.LastName,
+                Roles = person.Roles,
+                PrimaryRole = person.PrimaryRole
+            };
+
+            return View(viewModel);
+        }
+
+        // POST: Account/MyProfile
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult MyProfile(ProfileViewModel model)
+        {
+            if (CurrentUser == null || CurrentUser.IsDeleted)
+            {
+                TempData["Error"] = "Please login to update your profile.";
+                return RedirectToAction("Login");
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    var person = db.People
+                        .Where(p => !p.IsDeleted && p.ID == CurrentUser.ID)
+                        .FirstOrDefault();
+
+                    if (person == null)
+                    {
+                        TempData["Error"] = "User not found.";
+                        return RedirectToAction("Login");
+                    }
+
+                    // Check if username is already taken by another user
+                    var existingUser = db.People
+                        .Where(p => !p.IsDeleted && p.UserName == model.UserName && p.ID != CurrentUser.ID)
+                        .FirstOrDefault();
+
+                    if (existingUser != null)
+                    {
+                        ModelState.AddModelError("UserName", "This username is already taken. Please choose a different one.");
+                        return View(model);
+                    }
+
+                    // Update user details
+                    person.UserName = model.UserName;
+                    person.FirstMidName = model.FirstMidName;
+                    person.LastName = model.LastName;
+
+                    db.SaveChanges();
+
+                    // Update session with new user data
+                    Session["CurrentUser"] = person;
+
+                    TempData["Success"] = "Profile updated successfully!";
+                    return RedirectToAction("MyProfile");
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError("", "An error occurred while updating your profile. Please try again.");
+                    System.Diagnostics.Debug.WriteLine($"Profile update error: {ex.Message}");
+                }
+            }
+
+            return View(model);
+        }
+
+        // GET: Account/ChangePassword
+        [HttpGet]
+        public ActionResult ChangePassword()
+        {
+            if (CurrentUser == null || CurrentUser.IsDeleted)
+            {
+                TempData["Error"] = "Please login to change your password.";
+                return RedirectToAction("Login");
+            }
+
+            return View(new ChangePasswordViewModel());
+        }
+
+        // POST: Account/ChangePassword
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult ChangePassword(ChangePasswordViewModel model)
+        {
+            if (CurrentUser == null || CurrentUser.IsDeleted)
+            {
+                TempData["Error"] = "Please login to change your password.";
+                return RedirectToAction("Login");
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    var person = db.People
+                        .Where(p => !p.IsDeleted && p.ID == CurrentUser.ID)
+                        .FirstOrDefault();
+
+                    if (person == null)
+                    {
+                        TempData["Error"] = "User not found.";
+                        return RedirectToAction("Login");
+                    }
+
+                    // Verify current password
+                    if (person.Password != model.CurrentPassword)
+                    {
+                        ModelState.AddModelError("CurrentPassword", "Current password is incorrect.");
+                        return View(model);
+                    }
+
+                    // Update password
+                    person.Password = model.NewPassword;
+
+                    db.SaveChanges();
+
+                    TempData["Success"] = "Password changed successfully!";
+                    return RedirectToAction("MyProfile");
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError("", "An error occurred while changing your password. Please try again.");
+                    System.Diagnostics.Debug.WriteLine($"Password change error: {ex.Message}");
+                }
+            }
+
+            return View(model);
+        }
+
         [HttpGet]
         public ActionResult ConcurrentLogin()
         {
@@ -178,7 +339,10 @@ namespace ContosoUniversity.Controllers
                 return RedirectToAction("ManageUsers", "Administrator");
             }
 
-            var person = db.People.Find(userId.Value);
+            var person = db.People
+                .Where(p => !p.IsDeleted && p.ID == userId.Value) // Filter deleted users
+                .FirstOrDefault();
+
             if (person == null)
             {
                 TempData["Error"] = "User not found.";
@@ -196,7 +360,10 @@ namespace ContosoUniversity.Controllers
         {
             try
             {
-                var person = db.People.Find(userId);
+                var person = db.People
+                    .Where(p => !p.IsDeleted && p.ID == userId) // Filter deleted users
+                    .FirstOrDefault();
+
                 if (person != null)
                 {
                     person.IsLoggedIn = false;
@@ -235,6 +402,11 @@ namespace ContosoUniversity.Controllers
         // Helper method to redirect to appropriate dashboard
         private ActionResult RedirectToDashboard(Person person)
         {
+            if (person == null || person.IsDeleted) // Check if user is deleted
+            {
+                return RedirectToAction("Login");
+            }
+
             switch (person.PrimaryRole)
             {
                 case Person.UserRole.Administrator:

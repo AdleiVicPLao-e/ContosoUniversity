@@ -31,5 +31,14 @@ namespace ContosoUniversity.Models
         public virtual Administrator Administrator { get; set; }
 
         public virtual ICollection<Course> Courses { get; set; }
+
+        private bool deleted;
+        // 🧱 Soft delete flag — protected so only controller/service can modify
+        [ScaffoldColumn(false)]
+        public bool IsDeleted
+        {
+            get => deleted;
+            set => deleted = value; // only controller or derived class can change
+        }
     }
 }

@@ -97,6 +97,19 @@ namespace ContosoUniversity.DAL
                 .Property(p => p.Roles)
                 .IsRequired();
 
+            // Configure soft delete properties
+            modelBuilder.Entity<Person>()
+                .Property(p => p.IsDeleted)
+                .IsRequired();
+
+            modelBuilder.Entity<Course>()
+                .Property(c => c.IsDeleted)
+                .IsRequired();
+
+            modelBuilder.Entity<Department>()
+                .Property(d => d.IsDeleted)
+                .IsRequired();
+
             // Configure Student properties
             modelBuilder.Entity<Student>()
                 .Property(s => s.EnrollmentDate)

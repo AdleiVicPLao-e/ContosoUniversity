@@ -38,7 +38,8 @@
                     CanManageSystem = true,
                     CanViewReports = true,
                     CanManageAllDepartments = true,
-                    IsLoggedIn = false
+                    IsLoggedIn = false,
+                    IsDeleted = false
                 },
                 new Administrator
                 {
@@ -53,7 +54,8 @@
                     CanManageSystem = false,
                     CanViewReports = true,
                     CanManageAllDepartments = false,
-                    IsLoggedIn = false
+                    IsLoggedIn = false,
+                    IsDeleted = false
                 },
                 new Administrator
                 {
@@ -68,7 +70,8 @@
                     CanManageSystem = false,
                     CanViewReports = true,
                     CanManageAllDepartments = false,
-                    IsLoggedIn = false
+                    IsLoggedIn = false,
+                    IsDeleted = false
                 },
                 new Administrator
                 {
@@ -83,7 +86,8 @@
                     CanManageSystem = false,
                     CanViewReports = true,
                     CanManageAllDepartments = false,
-                    IsLoggedIn = false
+                    IsLoggedIn = false,
+                    IsDeleted = false
                 },
                 new Administrator
                 {
@@ -98,7 +102,8 @@
                     CanManageSystem = false,
                     CanViewReports = true,
                     CanManageAllDepartments = false,
-                    IsLoggedIn = false
+                    IsLoggedIn = false,
+                    IsDeleted = false
                 }
             };
             admins.ForEach(a => context.Administrators.AddOrUpdate(p => p.UserName, a));
@@ -109,12 +114,12 @@
             // -----------------------------
             var instructors = new List<Instructor>
             {
-                new Instructor { FirstMidName="Kim", LastName="Abercrombie", UserName="kim.abercrombie", Password="password123", Roles=Person.UserRole.Instructor, HireDate=DateTime.Parse("1995-03-11"), Specialization="Computer Science", Salary=75000m, IsLoggedIn=false },
-                new Instructor { FirstMidName="Fadi", LastName="Fakhouri", UserName="fadi.fakhouri", Password="password123", Roles=Person.UserRole.Instructor, HireDate=DateTime.Parse("2002-07-06"), Specialization="Software Engineering", Salary=80000m, IsLoggedIn=false },
-                new Instructor { FirstMidName="Roger", LastName="Harui", UserName="roger.harui", Password="password123", Roles=Person.UserRole.Instructor, HireDate=DateTime.Parse("1998-07-01"), Specialization="Economics", Salary=70000m, IsLoggedIn=false },
-                new Instructor { FirstMidName="Candace", LastName="Kapoor", UserName="candace.kapoor", Password="password123", Roles=Person.UserRole.Instructor, HireDate=DateTime.Parse("2001-01-15"), Specialization="Mathematics", Salary=72000m, IsLoggedIn=false },
-                new Instructor { FirstMidName="Roger", LastName="Zheng", UserName="roger.zheng", Password="password123", Roles=Person.UserRole.Instructor, HireDate=DateTime.Parse("2004-02-12"), Specialization="Chemistry", Salary=68000m, IsLoggedIn=false },
-                new Instructor { FirstMidName="Test", LastName="Instructor", UserName="instructor", Password="password123", Roles=Person.UserRole.Instructor, HireDate=DateTime.Parse("2010-01-01"), Specialization="Computer Science", Salary=65000m, IsLoggedIn=false }
+                new Instructor { FirstMidName="Kim", LastName="Abercrombie", UserName="kim.abercrombie", Password="password123", Roles=Person.UserRole.Instructor, HireDate=DateTime.Parse("1995-03-11"), Specialization="Computer Science", Salary=75000m, IsLoggedIn=false, IsDeleted=false },
+                new Instructor { FirstMidName="Fadi", LastName="Fakhouri", UserName="fadi.fakhouri", Password="password123", Roles=Person.UserRole.Instructor, HireDate=DateTime.Parse("2002-07-06"), Specialization="Software Engineering", Salary=80000m, IsLoggedIn=false, IsDeleted=false },
+                new Instructor { FirstMidName="Roger", LastName="Harui", UserName="roger.harui", Password="password123", Roles=Person.UserRole.Instructor, HireDate=DateTime.Parse("1998-07-01"), Specialization="Economics", Salary=70000m, IsLoggedIn=false, IsDeleted=false },
+                new Instructor { FirstMidName="Candace", LastName="Kapoor", UserName="candace.kapoor", Password="password123", Roles=Person.UserRole.Instructor, HireDate=DateTime.Parse("2001-01-15"), Specialization="Mathematics", Salary=72000m, IsLoggedIn=false, IsDeleted=false },
+                new Instructor { FirstMidName="Roger", LastName="Zheng", UserName="roger.zheng", Password="password123", Roles=Person.UserRole.Instructor, HireDate=DateTime.Parse("2004-02-12"), Specialization="Chemistry", Salary=68000m, IsLoggedIn=false, IsDeleted=false },
+                new Instructor { FirstMidName="Test", LastName="Instructor", UserName="instructor", Password="password123", Roles=Person.UserRole.Instructor, HireDate=DateTime.Parse("2010-01-01"), Specialization="Computer Science", Salary=65000m, IsLoggedIn=false, IsDeleted=false }
             };
             instructors.ForEach(i => context.Instructors.AddOrUpdate(p => p.UserName, i));
             context.SaveChanges();
@@ -124,15 +129,15 @@
             // -----------------------------
             var students = new List<Student>
             {
-                new Student { FirstMidName="Carson", LastName="Alexander", UserName="carson.alexander", Password="password123", Roles=Person.UserRole.Student, EnrollmentDate=DateTime.Parse("2010-09-01"), StudentCode="S10001", IsLoggedIn=false },
-                new Student { FirstMidName="Meredith", LastName="Alonso", UserName="meredith.alonso", Password="password123", Roles=Person.UserRole.Student, EnrollmentDate=DateTime.Parse("2012-09-01"), StudentCode="S10002", IsLoggedIn=false },
-                new Student { FirstMidName="Arturo", LastName="Anand", UserName="arturo.anand", Password="password123", Roles=Person.UserRole.Student, EnrollmentDate=DateTime.Parse("2013-09-01"), StudentCode="S10003", IsLoggedIn=false },
-                new Student { FirstMidName="Gytis", LastName="Barzdukas", UserName="gytis.barzdukas", Password="password123", Roles=Person.UserRole.Student, EnrollmentDate=DateTime.Parse("2012-09-01"), StudentCode="S10004", IsLoggedIn=false },
-                new Student { FirstMidName="Yan", LastName="Li", UserName="yan.li", Password="password123", Roles=Person.UserRole.Student, EnrollmentDate=DateTime.Parse("2012-09-01"), StudentCode="S10005", IsLoggedIn=false },
-                new Student { FirstMidName="Peggy", LastName="Justice", UserName="peggy.justice", Password="password123", Roles=Person.UserRole.Student, EnrollmentDate=DateTime.Parse("2011-09-01"), StudentCode="S10006", IsLoggedIn=false },
-                new Student { FirstMidName="Laura", LastName="Norman", UserName="laura.norman", Password="password123", Roles=Person.UserRole.Student, EnrollmentDate=DateTime.Parse("2013-09-01"), StudentCode="S10007", IsLoggedIn=false },
-                new Student { FirstMidName="Nino", LastName="Olivetto", UserName="nino.olivetto", Password="password123", Roles=Person.UserRole.Student, EnrollmentDate=DateTime.Parse("2005-09-01"), StudentCode="S10008", IsLoggedIn=false },
-                new Student { FirstMidName="Test", LastName="Student", UserName="student", Password="password123", Roles=Person.UserRole.Student, EnrollmentDate=DateTime.Parse("2023-09-01"), StudentCode="S99999", IsLoggedIn=false }
+                new Student { FirstMidName="Carson", LastName="Alexander", UserName="carson.alexander", Password="password123", Roles=Person.UserRole.Student, EnrollmentDate=DateTime.Parse("2010-09-01"), StudentCode="S10001", IsLoggedIn=false, IsDeleted=false },
+                new Student { FirstMidName="Meredith", LastName="Alonso", UserName="meredith.alonso", Password="password123", Roles=Person.UserRole.Student, EnrollmentDate=DateTime.Parse("2012-09-01"), StudentCode="S10002", IsLoggedIn=false, IsDeleted=false },
+                new Student { FirstMidName="Arturo", LastName="Anand", UserName="arturo.anand", Password="password123", Roles=Person.UserRole.Student, EnrollmentDate=DateTime.Parse("2013-09-01"), StudentCode="S10003", IsLoggedIn=false, IsDeleted=false },
+                new Student { FirstMidName="Gytis", LastName="Barzdukas", UserName="gytis.barzdukas", Password="password123", Roles=Person.UserRole.Student, EnrollmentDate=DateTime.Parse("2012-09-01"), StudentCode="S10004", IsLoggedIn=false, IsDeleted=false },
+                new Student { FirstMidName="Yan", LastName="Li", UserName="yan.li", Password="password123", Roles=Person.UserRole.Student, EnrollmentDate=DateTime.Parse("2012-09-01"), StudentCode="S10005", IsLoggedIn=false, IsDeleted=false },
+                new Student { FirstMidName="Peggy", LastName="Justice", UserName="peggy.justice", Password="password123", Roles=Person.UserRole.Student, EnrollmentDate=DateTime.Parse("2011-09-01"), StudentCode="S10006", IsLoggedIn=false, IsDeleted=false },
+                new Student { FirstMidName="Laura", LastName="Norman", UserName="laura.norman", Password="password123", Roles=Person.UserRole.Student, EnrollmentDate=DateTime.Parse("2013-09-01"), StudentCode="S10007", IsLoggedIn=false, IsDeleted=false },
+                new Student { FirstMidName="Nino", LastName="Olivetto", UserName="nino.olivetto", Password="password123", Roles=Person.UserRole.Student, EnrollmentDate=DateTime.Parse("2005-09-01"), StudentCode="S10008", IsLoggedIn=false, IsDeleted=false },
+                new Student { FirstMidName="Test", LastName="Student", UserName="student", Password="password123", Roles=Person.UserRole.Student, EnrollmentDate=DateTime.Parse("2023-09-01"), StudentCode="S99999", IsLoggedIn=false, IsDeleted=false }
             };
             students.ForEach(s => context.Students.AddOrUpdate(p => p.UserName, s));
             context.SaveChanges();
@@ -152,31 +157,36 @@
                     Name="English",
                     Budget=350000,
                     StartDate=DateTime.Parse("2007-09-01"),
-                    AdministratorID = artsAdmin.ID
+                    AdministratorID = artsAdmin.ID,
+                    IsDeleted = false
                 },
                 new Department {
                     Name="Mathematics",
                     Budget=100000,
                     StartDate=DateTime.Parse("2007-09-01"),
-                    AdministratorID = adminUser.ID
+                    AdministratorID = adminUser.ID,
+                    IsDeleted = false
                 },
                 new Department {
                     Name="Engineering",
                     Budget=350000,
                     StartDate=DateTime.Parse("2007-09-01"),
-                    AdministratorID = engAdmin.ID
+                    AdministratorID = engAdmin.ID,
+                    IsDeleted = false
                 },
                 new Department {
                     Name="Economics",
                     Budget=100000,
                     StartDate=DateTime.Parse("2007-09-01"),
-                    AdministratorID = deptHead.ID
+                    AdministratorID = deptHead.ID,
+                    IsDeleted = false
                 },
                 new Department {
                     Name="Chemistry",
                     Budget=180000,
                     StartDate=DateTime.Parse("2008-09-01"),
-                    AdministratorID = sciAdmin.ID
+                    AdministratorID = sciAdmin.ID,
+                    IsDeleted = false
                 }
             };
             departments.ForEach(d => context.Departments.AddOrUpdate(p => p.Name, d));
@@ -193,15 +203,15 @@
 
             var courses = new List<Course>
             {
-                new Course{CourseID=1050, Title="Chemistry", Credits=3, Capacity=30, Description="Intro to chemical principles", DepartmentID=chemistryDept.DepartmentID},
-                new Course{CourseID=4022, Title="Microeconomics", Credits=3, Capacity=25, Description="Individual economic behavior", DepartmentID=economicsDept.DepartmentID},
-                new Course{CourseID=4041, Title="Macroeconomics", Credits=3, Capacity=25, Description="Aggregate economic activity", DepartmentID=economicsDept.DepartmentID},
-                new Course{CourseID=1045, Title="Calculus", Credits=4, Capacity=35, Description="Differential & integral calculus", DepartmentID=mathDept.DepartmentID},
-                new Course{CourseID=3141, Title="Trigonometry", Credits=4, Capacity=30, Description="Trigonometric functions", DepartmentID=mathDept.DepartmentID},
-                new Course{CourseID=2021, Title="Composition", Credits=3, Capacity=20, Description="Effective writing fundamentals", DepartmentID=englishDept.DepartmentID},
-                new Course{CourseID=2042, Title="Literature", Credits=4, Capacity=20, Description="Survey of major literary works", DepartmentID=englishDept.DepartmentID},
-                new Course{CourseID=5010, Title="Computer Science", Credits=4, Capacity=40, Description="Intro to programming", DepartmentID=engineeringDept.DepartmentID},
-                new Course{CourseID=5020, Title="Database Systems", Credits=3, Capacity=25, Description="Database system design", DepartmentID=engineeringDept.DepartmentID}
+                new Course{CourseID=1050, Title="Chemistry", Credits=3, Capacity=30, Description="Intro to chemical principles", DepartmentID=chemistryDept.DepartmentID, IsActive=true, IsDeleted=false},
+                new Course{CourseID=4022, Title="Microeconomics", Credits=3, Capacity=25, Description="Individual economic behavior", DepartmentID=economicsDept.DepartmentID, IsActive=true, IsDeleted=false},
+                new Course{CourseID=4041, Title="Macroeconomics", Credits=3, Capacity=25, Description="Aggregate economic activity", DepartmentID=economicsDept.DepartmentID, IsActive=true, IsDeleted=false},
+                new Course{CourseID=1045, Title="Calculus", Credits=4, Capacity=35, Description="Differential & integral calculus", DepartmentID=mathDept.DepartmentID, IsActive=true, IsDeleted=false},
+                new Course{CourseID=3141, Title="Trigonometry", Credits=4, Capacity=30, Description="Trigonometric functions", DepartmentID=mathDept.DepartmentID, IsActive=true, IsDeleted=false},
+                new Course{CourseID=2021, Title="Composition", Credits=3, Capacity=20, Description="Effective writing fundamentals", DepartmentID=englishDept.DepartmentID, IsActive=true, IsDeleted=false},
+                new Course{CourseID=2042, Title="Literature", Credits=4, Capacity=20, Description="Survey of major literary works", DepartmentID=englishDept.DepartmentID, IsActive=true, IsDeleted=false},
+                new Course{CourseID=5010, Title="Computer Science", Credits=4, Capacity=40, Description="Intro to programming", DepartmentID=engineeringDept.DepartmentID, IsActive=true, IsDeleted=false},
+                new Course{CourseID=5020, Title="Database Systems", Credits=3, Capacity=25, Description="Database system design", DepartmentID=engineeringDept.DepartmentID, IsActive=true, IsDeleted=false}
             };
             courses.ForEach(c => context.Courses.AddOrUpdate(p => p.CourseID, c));
             context.SaveChanges();

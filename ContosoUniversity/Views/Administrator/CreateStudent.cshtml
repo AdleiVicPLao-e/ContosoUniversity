@@ -1,0 +1,135 @@
+﻿@model ContosoUniversity.Models.Student
+
+@{
+    ViewBag.Title = "Create Student";
+}
+
+<div class="container py-4">
+    <div class="row g-4">
+        <!-- Form Section -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-person-plus me-2"></i>Create New Student</h4>
+                </div>
+                <div class="card-body">
+                    @using (Html.BeginForm("CreateStudent", "Administrator", FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.ValidationSummary(true, "", new { @class = "text-danger mb-3" })
+
+                        <!-- Name Fields -->
+                        <div class="row g-3">
+                            <div class="col-md-6 form-floating">
+                                @Html.EditorFor(model => model.FirstMidName, new { htmlAttributes = new { @class = "form-control", placeholder = "First Name" } })
+                                @Html.LabelFor(model => model.FirstMidName, "First Name")
+                                @Html.ValidationMessageFor(model => model.FirstMidName, "", new { @class = "text-danger" })
+                            </div>
+                            <div class="col-md-6 form-floating">
+                                @Html.EditorFor(model => model.LastName, new { htmlAttributes = new { @class = "form-control", placeholder = "Last Name" } })
+                                @Html.LabelFor(model => model.LastName, "Last Name")
+                                @Html.ValidationMessageFor(model => model.LastName, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <!-- Username & Password -->
+                        <div class="row g-3 mt-3">
+                            <div class="col-md-6 form-floating">
+                                @Html.EditorFor(model => model.UserName, new { htmlAttributes = new { @class = "form-control", placeholder = "Username" } })
+                                @Html.LabelFor(model => model.UserName, "Username")
+                                @Html.ValidationMessageFor(model => model.UserName, "", new { @class = "text-danger" })
+                            </div>
+                            <div class="col-md-6 form-floating">
+                                @Html.PasswordFor(model => model.Password, new { @class = "form-control", placeholder = "Password", value = Model?.Password })
+                                @Html.LabelFor(model => model.Password, "Password")
+                                @Html.ValidationMessageFor(model => model.Password, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <!-- Enrollment Date -->
+                        <div class="row g-3 mt-3">
+                            <div class="col-md-6 form-floating">
+                                @Html.EditorFor(model => model.EnrollmentDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                                @Html.LabelFor(model => model.EnrollmentDate, "Enrollment Date")
+                                @Html.ValidationMessageFor(model => model.EnrollmentDate, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="mt-4 d-flex gap-2">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle me-2"></i>Create Student
+                            </button>
+                            <a href="@Url.Action("ManageStudents", "Administrator")" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Back to List
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Section -->
+        <div class="col-lg-4">
+            <!-- Student Info -->
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Student Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Required Fields:</strong></p>
+                    <ul class="small text-muted">
+                        <li>First Name</li>
+                        <li>Last Name</li>
+                        <li>Username</li>
+                        <li>Password</li>
+                        <li>Enrollment Date</li>
+                    </ul>
+
+                    <p class="mt-3"><strong>Default Settings:</strong></p>
+                    <ul class="small text-muted">
+                        <li>Student role assigned automatically</li>
+                        <li>Account active by default</li>
+                        <li>Not logged in initially</li>
+                        <li>Student code auto-generated in backend</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Quick Tips -->
+            <div class="card shadow-sm mb-3">
+                <div class="card-body">
+                    <h6><i class="bi bi-lightbulb me-2"></i>Quick Tips</h6>
+                    <ul class="small text-muted mb-0">
+                        <li><i class="bi bi-dot"></i> Username must be unique</li>
+                        <li><i class="bi bi-dot"></i> Password encrypted automatically</li>
+                        <li><i class="bi bi-dot"></i> Student can enroll in courses after creation</li>
+                        <li><i class="bi bi-dot"></i> Student code helps identify students in system</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Password Requirements -->
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h6><i class="bi bi-shield-lock me-2"></i>Password Requirements</h6>
+                    <ul class="small text-muted mb-0">
+                        <li><i class="bi bi-dot"></i> At least 6 characters</li>
+                        <li><i class="bi bi-dot"></i> Include letters and numbers</li>
+                        <li><i class="bi bi-dot"></i> Use strong, unique password</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script>
+        $(document).ready(function () {
+            // Set EnrollmentDate to today
+            $('#EnrollmentDate').val(new Date().toISOString().split('T')[0]);
+        });
+    </script>
+}

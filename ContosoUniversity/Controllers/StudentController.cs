@@ -16,10 +16,17 @@ namespace ContosoUniversity.Controllers
             RequireRole(Person.UserRole.Student);
 
             var student = db.Students
-                .Include(s => s.Enrollments.Select(e => e.Course.Department)) // Include Department
-                .Include(s => s.Enrollments.Select(e => e.Course.Instructors)) // Include Instructors
-                .Include(s => s.Enrollments.Select(e => e.Course.Instructors.Select(i => i.OfficeAssignment))) // Include OfficeAssignment
-                .First(s => s.ID == CurrentUser.ID);
+                .Where(s => !s.IsDeleted && s.ID == CurrentUser.ID) // Filter deleted students
+                .Include(s => s.Enrollments.Select(e => e.Course.Department))
+                .Include(s => s.Enrollments.Select(e => e.Course.Instructors))
+                .Include(s => s.Enrollments.Select(e => e.Course.Instructors.Select(i => i.OfficeAssignment)))
+                .FirstOrDefault();
+
+            if (student == null)
+            {
+                TempData["Error"] = "Student not found";
+                return RedirectToAction("Logout", "Account");
+            }
 
             return View(student);
         }
@@ -30,11 +37,14 @@ namespace ContosoUniversity.Controllers
             RequireRole(Person.UserRole.Student);
 
             var enrollments = db.Enrollments
-                .Include(e => e.Course.Department) // Include Department
-                .Include(e => e.Course.Instructors) // Include Instructors
-                .Include(e => e.Course.Instructors.Select(i => i.OfficeAssignment)) // Include OfficeAssignment
-                .Include(e => e.Student) // Include Student
-                .Where(e => e.StudentID == CurrentUser.ID)
+                .Include(e => e.Course.Department)
+                .Include(e => e.Course.Instructors)
+                .Include(e => e.Course.Instructors.Select(i => i.OfficeAssignment))
+                .Include(e => e.Student)
+                .Where(e => e.StudentID == CurrentUser.ID &&
+                           !e.Student.IsDeleted &&
+                           !e.Course.IsDeleted &&
+                           !e.Course.Department.IsDeleted) // Filter deleted students, courses, and departments
                 .ToList();
 
             return View(enrollments);
@@ -46,11 +56,15 @@ namespace ContosoUniversity.Controllers
             RequireRole(Person.UserRole.Student);
 
             var courses = db.Courses
-                .Include(c => c.Department) // Include Department
-                .Include(c => c.Instructors) // Include Instructors
-                .Include(c => c.Instructors.Select(i => i.OfficeAssignment)) // Include OfficeAssignment
-                .Include(c => c.Enrollments) // Include Enrollments for capacity check
-                .Where(c => c.IsActive && c.Enrollments.Count < c.Capacity)
+                .Include(c => c.Department)
+                .Include(c => c.Instructors)
+                .Include(c => c.Instructors.Select(i => i.OfficeAssignment))
+                .Include(c => c.Enrollments)
+                .Where(c => c.IsActive &&
+                           !c.IsDeleted &&
+                           !c.Department.IsDeleted &&
+                           c.Instructors.Any(i => !i.IsDeleted) && // Only show courses with active instructors
+                           c.Enrollments.Count(e => !e.Student.IsDeleted) < c.Capacity) // Filter deleted students in capacity count
                 .ToList();
 
             return View(courses);
@@ -65,28 +79,37 @@ namespace ContosoUniversity.Controllers
             try
             {
                 var student = db.Students
-                    .Include(s => s.Enrollments.Select(e => e.Course)) // Include Enrollments and Courses
-                    .FirstOrDefault(s => s.ID == CurrentUser.ID);
+                    .Where(s => !s.IsDeleted && s.ID == CurrentUser.ID)
+                    .Include(s => s.Enrollments.Select(e => e.Course)) // Ensure Course is loaded
+                    .FirstOrDefault();
 
-                var course = db.Courses
-                    .Include(c => c.Enrollments) // Include Enrollments for capacity check
-                    .FirstOrDefault(c => c.CourseID == courseId);
-
-                if (course == null)
+                if (student == null)
                 {
-                    TempData["Error"] = "Course not found";
+                    TempData["Error"] = "Student not found";
                     return RedirectToAction("AvailableCourses");
                 }
 
-                // Check if already enrolled
-                if (student.Enrollments.Any(e => e.CourseID == courseId))
+                var course = db.Courses
+                    .Where(c => !c.IsDeleted && c.CourseID == courseId && c.IsActive && !c.Department.IsDeleted)
+                    .Include(c => c.Enrollments.Select(e => e.Student)) // Include enrollments and students for capacity check
+                    .FirstOrDefault();
+
+                if (course == null)
+                {
+                    TempData["Error"] = "Course not found or not available";
+                    return RedirectToAction("AvailableCourses");
+                }
+
+                // Check if already enrolled - safer null checking
+                if (student.Enrollments.Any(e => e.CourseID == courseId && e.Course != null && !e.Course.IsDeleted))
                 {
                     TempData["Error"] = "You are already enrolled in this course";
                     return RedirectToAction("AvailableCourses");
                 }
 
-                // Check course capacity
-                if (course.Enrollments.Count >= course.Capacity)
+                // Check course capacity with active students only - safer null checking
+                var activeEnrollmentsCount = course.Enrollments.Count(e => e.Student != null && !e.Student.IsDeleted);
+                if (activeEnrollmentsCount >= course.Capacity)
                 {
                     TempData["Error"] = "This course has reached its capacity";
                     return RedirectToAction("AvailableCourses");
@@ -107,7 +130,11 @@ namespace ContosoUniversity.Controllers
             }
             catch (Exception ex)
             {
-                TempData["Error"] = "An error occurred while enrolling in the course";
+                // Log the full exception details for debugging
+                System.Diagnostics.Debug.WriteLine($"Enrollment error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+
+                TempData["Error"] = "An error occurred while enrolling in the course. Please try again.";
                 return RedirectToAction("AvailableCourses");
             }
         }
@@ -121,9 +148,13 @@ namespace ContosoUniversity.Controllers
             try
             {
                 var enrollment = db.Enrollments
-                    .Include(e => e.Course) // Include Course for feedback
-                    .Include(e => e.Student) // Include Student
-                    .FirstOrDefault(e => e.EnrollmentID == enrollmentId && e.StudentID == CurrentUser.ID);
+                    .Include(e => e.Course)
+                    .Include(e => e.Student)
+                    .Where(e => e.EnrollmentID == enrollmentId &&
+                               e.StudentID == CurrentUser.ID &&
+                               !e.Student.IsDeleted &&
+                               !e.Course.IsDeleted) // Filter deleted students and courses
+                    .FirstOrDefault();
 
                 if (enrollment == null)
                 {
@@ -141,7 +172,7 @@ namespace ContosoUniversity.Controllers
             }
             catch (Exception ex)
             {
-                TempData["Error"] = "An error occurred while dropping the course";
+                TempData["Error"] = "An error occurred while dropping the course " + ex;
                 return RedirectToAction("Dashboard");
             }
         }
@@ -152,11 +183,15 @@ namespace ContosoUniversity.Controllers
             RequireRole(Person.UserRole.Student);
 
             var enrollments = db.Enrollments
-                .Include(e => e.Course.Department) // Include Department
-                .Include(e => e.Course.Instructors) // Include Instructors
-                .Include(e => e.Course.Instructors.Select(i => i.OfficeAssignment)) // Include OfficeAssignment
-                .Include(e => e.Student) // Include Student
-                .Where(e => e.StudentID == CurrentUser.ID)
+                .Include(e => e.Course.Department)
+                .Include(e => e.Course.Instructors)
+                .Include(e => e.Course.Instructors.Select(i => i.OfficeAssignment))
+                .Include(e => e.Student)
+                .Where(e => e.StudentID == CurrentUser.ID &&
+                           !e.Student.IsDeleted &&
+                           !e.Course.IsDeleted &&
+                           !e.Course.Department.IsDeleted &&
+                           e.Course.Instructors.Any(i => !i.IsDeleted)) // Filter deleted records and ensure active instructors
                 .ToList();
 
             return View(enrollments);
@@ -168,12 +203,16 @@ namespace ContosoUniversity.Controllers
             RequireRole(Person.UserRole.Student);
 
             var course = db.Courses
-                .Include(c => c.Department) // Include Department
-                .Include(c => c.Instructors) // Include Instructors
-                .Include(c => c.Instructors.Select(i => i.OfficeAssignment)) // Include OfficeAssignment
-                .Include(c => c.Enrollments.Select(e => e.Student)) // Include Enrollments and Students
-                .Include(c => c.Enrollments) // Include Enrollments for capacity info
-                .FirstOrDefault(c => c.CourseID == id);
+                .Include(c => c.Department)
+                .Include(c => c.Instructors)
+                .Include(c => c.Instructors.Select(i => i.OfficeAssignment))
+                .Include(c => c.Enrollments.Select(e => e.Student))
+                .Include(c => c.Enrollments)
+                .Where(c => c.CourseID == id &&
+                           !c.IsDeleted &&
+                           !c.Department.IsDeleted &&
+                           c.Instructors.Any(i => !i.IsDeleted)) // Filter deleted courses, departments, and ensure active instructors
+                .FirstOrDefault();
 
             if (course == null)
             {
@@ -190,10 +229,17 @@ namespace ContosoUniversity.Controllers
             RequireRole(Person.UserRole.Student);
 
             var student = db.Students
-                .Include(s => s.Enrollments.Select(e => e.Course.Department)) // Include Enrollments, Courses, and Departments
-                .Include(s => s.Enrollments.Select(e => e.Course.Instructors)) // Include Course Instructors
-                .Include(s => s.Enrollments.Select(e => e.Course.Instructors.Select(i => i.OfficeAssignment))) // Include OfficeAssignment
-                .First(s => s.ID == CurrentUser.ID);
+                .Where(s => !s.IsDeleted && s.ID == CurrentUser.ID) // Filter deleted students
+                .Include(s => s.Enrollments.Select(e => e.Course.Department))
+                .Include(s => s.Enrollments.Select(e => e.Course.Instructors))
+                .Include(s => s.Enrollments.Select(e => e.Course.Instructors.Select(i => i.OfficeAssignment)))
+                .FirstOrDefault();
+
+            if (student == null)
+            {
+                TempData["Error"] = "Student not found";
+                return RedirectToAction("Logout", "Account");
+            }
 
             return View(student);
         }
@@ -204,17 +250,22 @@ namespace ContosoUniversity.Controllers
             RequireRole(Person.UserRole.Student);
 
             var enrollments = db.Enrollments
-                .Include(e => e.Course.Department) // Include Department
-                .Include(e => e.Course) // Include Course
-                .Include(e => e.Student) // Include Student
-                .Where(e => e.StudentID == CurrentUser.ID)
+                .Include(e => e.Course.Department)
+                .Include(e => e.Course)
+                .Include(e => e.Student)
+                .Where(e => e.StudentID == CurrentUser.ID &&
+                           !e.Student.IsDeleted &&
+                           !e.Course.IsDeleted &&
+                           !e.Course.Department.IsDeleted) // Filter deleted records
                 .ToList();
 
             var progress = new StudentProgressViewModel
             {
                 Enrollments = enrollments,
-                TotalCreditsAttempted = enrollments.Sum(e => e.Course.Credits),
-                TotalCreditsEarned = enrollments.Where(e => e.Grade.HasValue && e.Grade.Value != Grade.F)
+                TotalCreditsAttempted = enrollments.Where(e => !e.Course.IsDeleted).Sum(e => e.Course.Credits),
+                TotalCreditsEarned = enrollments.Where(e => e.Grade.HasValue &&
+                                                           e.Grade.Value != Grade.F &&
+                                                           !e.Course.IsDeleted)
                                                .Sum(e => e.Course.Credits),
                 GPA = CalculateGPA(enrollments)
             };
@@ -228,17 +279,20 @@ namespace ContosoUniversity.Controllers
             RequireRole(Person.UserRole.Student);
 
             var courses = db.Courses
-                .Include(c => c.Department) // Include Department
-                .Include(c => c.Instructors) // Include Instructors
-                .Include(c => c.Instructors.Select(i => i.OfficeAssignment)) // Include OfficeAssignment
-                .Include(c => c.Enrollments) // Include Enrollments for capacity
-                .Where(c => c.IsActive)
+                .Include(c => c.Department)
+                .Include(c => c.Instructors)
+                .Include(c => c.Instructors.Select(i => i.OfficeAssignment))
+                .Include(c => c.Enrollments)
+                .Where(c => c.IsActive &&
+                           !c.IsDeleted &&
+                           !c.Department.IsDeleted &&
+                           c.Instructors.Any(i => !i.IsDeleted)) // Filter deleted records and ensure active instructors
                 .AsQueryable();
 
             // Apply department filter
             if (!string.IsNullOrEmpty(departmentFilter) && int.TryParse(departmentFilter, out int deptId))
             {
-                courses = courses.Where(c => c.DepartmentID == deptId);
+                courses = courses.Where(c => c.DepartmentID == deptId && !c.Department.IsDeleted);
             }
 
             // Apply search filter
@@ -250,9 +304,9 @@ namespace ContosoUniversity.Controllers
                     c.CourseID.ToString().Contains(searchString));
             }
 
-            // Get departments for filter dropdown
+            // Get departments for filter dropdown (only non-deleted departments)
             ViewBag.DepartmentFilter = new SelectList(
-                db.Departments.OrderBy(d => d.Name),
+                db.Departments.Where(d => !d.IsDeleted).OrderBy(d => d.Name),
                 "DepartmentID",
                 "Name",
                 departmentFilter);
@@ -268,10 +322,15 @@ namespace ContosoUniversity.Controllers
             RequireRole(Person.UserRole.Student);
 
             var enrollments = db.Enrollments
-                .Include(e => e.Course.Department) // Include Department
-                .Include(e => e.Course.Instructors) // Include Instructors
-                .Include(e => e.Student) // Include Student
-                .Where(e => e.StudentID == CurrentUser.ID && !e.Grade.HasValue) // Only current courses
+                .Include(e => e.Course.Department)
+                .Include(e => e.Course.Instructors)
+                .Include(e => e.Student)
+                .Where(e => e.StudentID == CurrentUser.ID &&
+                           !e.Grade.HasValue &&
+                           !e.Student.IsDeleted &&
+                           !e.Course.IsDeleted &&
+                           !e.Course.Department.IsDeleted &&
+                           e.Course.Instructors.Any(i => !i.IsDeleted)) // Only current courses with active records
                 .ToList();
 
             // This would typically come from an Assignments table
@@ -306,10 +365,14 @@ namespace ContosoUniversity.Controllers
             RequireRole(Person.UserRole.Student);
 
             var enrollments = db.Enrollments
-                .Include(e => e.Course.Department) // Include Department
-                .Include(e => e.Course) // Include Course
-                .Include(e => e.Student) // Include Student
-                .Where(e => e.StudentID == CurrentUser.ID && e.Grade.HasValue) // Only completed courses
+                .Include(e => e.Course.Department)
+                .Include(e => e.Course)
+                .Include(e => e.Student)
+                .Where(e => e.StudentID == CurrentUser.ID &&
+                           e.Grade.HasValue &&
+                           !e.Student.IsDeleted &&
+                           !e.Course.IsDeleted &&
+                           !e.Course.Department.IsDeleted) // Only completed courses with active records
                 .OrderBy(e => e.Course.CourseID)
                 .ToList();
 
@@ -319,7 +382,7 @@ namespace ContosoUniversity.Controllers
                 StudentID = CurrentUser.ID.ToString(),
                 Enrollments = enrollments,
                 CumulativeGPA = CalculateGPA(enrollments),
-                TotalCreditsEarned = enrollments.Where(e => e.Grade.Value != Grade.F)
+                TotalCreditsEarned = enrollments.Where(e => e.Grade.Value != Grade.F && !e.Course.IsDeleted)
                                                .Sum(e => e.Course.Credits)
             };
 
@@ -328,7 +391,10 @@ namespace ContosoUniversity.Controllers
 
         private decimal CalculateGPA(List<Enrollment> enrollments)
         {
-            var gradedEnrollments = enrollments.Where(e => e.Grade.HasValue).ToList();
+            var gradedEnrollments = enrollments
+                .Where(e => e.Grade.HasValue && !e.Course.IsDeleted) // Filter deleted courses
+                .ToList();
+
             if (!gradedEnrollments.Any()) return 0.0m;
 
             var totalGradePoints = gradedEnrollments.Sum(e => GetGradePoints(e.Grade.Value) * e.Course.Credits);

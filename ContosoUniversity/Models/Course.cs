@@ -59,5 +59,15 @@ namespace ContosoUniversity.Models
                 return "Low Enrollment";
             }
         }
+
+        private bool deleted;
+        // 🧱 Soft delete flag — protected so only controller/service can modify
+        [ScaffoldColumn(false)]
+        public bool IsDeleted
+        {
+            get => deleted;
+            set => deleted = value; // only controller or derived class can change
+        }
+
     }
 }
